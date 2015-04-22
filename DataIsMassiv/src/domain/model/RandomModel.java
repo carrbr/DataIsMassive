@@ -10,6 +10,6 @@ public class RandomModel extends AbstractRatingModel {
 	
 	@Override
 	public Rating predict(Rating r) {
-		return r.reRate((short)(random.nextInt(4)+1));
+		return r.reRate((short)(random.nextInt(5)+1));
 	}
 }
