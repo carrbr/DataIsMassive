@@ -1,12 +1,13 @@
+
 package domain;
 
 public class Rating {
 	private int userId;
 	private int movieId;
 	private int dateId;
-	private short rating;
+	private float rating;
 
-	public Rating(int userId, int movieId, int dateId, short rating) {
+	public Rating(int userId, int movieId, int dateId, float rating) {
 		this.userId = userId;
 		this.movieId = movieId;
 		this.dateId = dateId;
@@ -18,13 +19,13 @@ public class Rating {
 	}
 
 	
-	public Rating reRate(short newRating){
+	public Rating reRate(float newRating){
 		return new Rating(userId, movieId, dateId, newRating);
 	}
 	
 	@Override
 	public String toString() {
-		return userId + "," + movieId + "," + dateId + "," + getRating();
+		return userId + "," + movieId + "," + dateId + "," + getNiceFormatRating();
 	}
 
 	@Override
@@ -57,8 +58,11 @@ public class Rating {
 		return true;
 	}
 
-	public short getRating() {
+	public double getRating() {
 		return rating;
 	}
-
+	
+	public double getNiceFormatRating() {
+		return (int)(rating*10)/(10.0);
+	}
 }

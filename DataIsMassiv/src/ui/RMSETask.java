@@ -25,14 +25,14 @@ public class RMSETask implements TaskCommand {
 
 			Rating shouldRating = null;
 
-			long err = 0;
+			double err = 0;
 			long n = 0;
 			while ((shouldRating = should.readNext()) != null) {
 				Rating isRating = is.readNext();
 				err += squareError(isRating, shouldRating);
 				n++;
 			}
-			System.out.println("The RMSE is: " + Math.sqrt((double) err / n));
+			System.out.println("The RMSE is: " + Math.sqrt(err / n));
 		} finally {
 			if (should != null)
 				should.close();
@@ -42,8 +42,8 @@ public class RMSETask implements TaskCommand {
 
 	}
 
-	private int squareError(Rating isRating, Rating shouldRating) {
-		int i = isRating.getRating() - shouldRating.getRating();
+	private double squareError(Rating isRating, Rating shouldRating) {
+		double i = isRating.getRating() - shouldRating.getRating();
 		return i * i;
 	}
 

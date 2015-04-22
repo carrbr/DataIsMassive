@@ -1,3 +1,4 @@
+
 package domain.model;
 
 import java.util.Random;
@@ -10,6 +11,6 @@ public class RandomModel extends AbstractRatingModel {
 	
 	@Override
 	public Rating predict(Rating r) {
-		return r.reRate((short)(random.nextInt(5)+1));
+		return r.reRate(((float)random.nextInt(41) + 10)/10);
 	}
 }
