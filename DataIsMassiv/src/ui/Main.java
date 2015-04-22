@@ -21,23 +21,23 @@ public class Main {
 		// 10);
 		// t.exec();
 
-//		 CreatRandomModelTask t = new CreatRandomModelTask("model/random");
-//		 t.exec();
+		// CreatRandomModelTask t = new CreatRandomModelTask("model/random");
+		// t.exec();
 
-//		 TestModelTask t = new TestModelTask("model/random", "data/A_test",
-//		 "data/A_test_result");
-//		 t.exec();
+		// TestModelTask t = new TestModelTask("model/random", "data/A_test",
+		// "data/A_test_result");
+		// t.exec();
 
-//		 RMSETask t = new RMSETask("data/A_test", "data/A_test_result");
-//		 t.exec();
-		
-		
-//		 TestModelTask p = new TestModelTask("model/random", "data/test.txt",
-//		 "data/result.txt");
-//		 p.exec();
-		
-//		PublishResultTask t = new PublishResultTask("data/result.txt", "data/");
-//		t.exec();
+		// RMSETask t = new RMSETask("data/A_test", "data/A_test_result");
+		// t.exec();
+
+		// TestModelTask p = new TestModelTask("model/random", "data/test.txt",
+		// "data/result.txt");
+		// p.exec();
+
+		// PublishResultTask t = new PublishResultTask("data/result.txt",
+		// "data/");
+		// t.exec();
 	}
 
 }
