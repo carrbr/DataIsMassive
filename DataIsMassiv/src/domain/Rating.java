@@ -2,10 +2,10 @@
 package domain;
 
 public class Rating {
-	private int userId;
-	private int movieId;
-	private int dateId;
-	private float rating;
+	final private int userId;
+	final private int movieId;
+	final private int dateId;
+	final private float rating;
 
 	public Rating(int userId, int movieId, int dateId, float rating) {
 		this.userId = userId;
@@ -28,12 +28,15 @@ public class Rating {
 		return userId + "," + movieId + "," + dateId + "," + getNiceFormatRating();
 	}
 
+	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + dateId;
 		result = prime * result + movieId;
+		result = prime * result + Float.floatToIntBits(rating);
 		result = prime * result + userId;
 		return result;
 	}
@@ -51,7 +54,7 @@ public class Rating {
 			return false;
 		if (movieId != other.movieId)
 			return false;
-		if (getRating() != other.getRating())
+		if (Float.floatToIntBits(rating) != Float.floatToIntBits(other.rating))
 			return false;
 		if (userId != other.userId)
 			return false;
