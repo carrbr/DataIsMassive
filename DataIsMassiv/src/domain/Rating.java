@@ -20,7 +20,9 @@ public class Rating {
 
 	
 	public Rating reRate(float newRating){
-		return new Rating(userId, movieId, dateId, newRating);
+		rating = newRating;
+		return this;
+//		return new Rating(userId, movieId, dateId, newRating);
 	}
 	
 	@Override
@@ -40,22 +42,30 @@ public class Rating {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (obj instanceof Rating) {
+			Rating that = (Rating) obj;
+			
+			if (userId != that.userId || movieId != that.movieId || dateId != that.dateId || rating != that.rating)
+				return false;
 			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Rating other = (Rating) obj;
-		if (dateId != other.dateId)
-			return false;
-		if (movieId != other.movieId)
-			return false;
-		if (getRating() != other.getRating())
-			return false;
-		if (userId != other.userId)
-			return false;
-		return true;
+		}
+		return false;
+//		if (this == obj)
+//			return true;
+//		if (obj == null)
+//			return false;
+//		if (getClass() != obj.getClass())
+//			return false;
+//		Rating other = (Rating) obj;
+//		if (dateId != other.dateId)
+//			return false;
+//		if (movieId != other.movieId)
+//			return false;
+//		if (getRating() != other.getRating())
+//			return false;
+//		if (userId != other.userId)
+//			return false;
+//		return true;
 	}
 
 	public double getRating() {
