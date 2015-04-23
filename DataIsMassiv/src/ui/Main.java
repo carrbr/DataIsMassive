@@ -21,7 +21,7 @@ public class Main {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		handleInput();
+		handleInput(args);
 
 		// split data/training.txt data/A 10
 		// createRandom model/random
@@ -32,18 +32,26 @@ public class Main {
 
 	}
 
-	private static void handleInput() throws Exception {
+	private static void handleInput(String [] args) throws Exception {
 		Scanner s = new Scanner(System.in);
-		// let the user perform as many actions as they like without having
-		// to restart the program every time
-		while (true) {
-			String[] args = readInCommand(s);	
-			// does user want to quit?
-			if (args.length > 0 && args[0].equalsIgnoreCase("quit")) {
-				break;
+		
+		// check if we are running a batch job from a script or an interactive, user job
+		if (args.length == 0) { // no args -> interactive, user job
+			// let the user perform as many actions as they like without having
+			// to restart the program every time
+			while (true) {
+				args = readInCommand(s);	
+				// does user want to quit?
+				if (args.length > 0 && args[0].equalsIgnoreCase("quit")) {
+					break;
+				}
+				new MainTaskDelegation(args).exec();
 			}
+		} else { // batch job with command line args
 			new MainTaskDelegation(args).exec();
 		}
+		
+		s.close();
 	}
 
 	private static String[] readInCommand(Scanner s) {
@@ -55,9 +63,8 @@ public class Main {
 		if (s.hasNext()) {
 			line = s.nextLine();
 		}
-		if (!line.equals("")) {
-			command = line.split(" ");
-		}
+		command = line.split(" ");
+
 
 		return command;
 	}
