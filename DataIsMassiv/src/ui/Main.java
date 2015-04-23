@@ -21,7 +21,7 @@ public class Main {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		handleInput(args);
+		handleInput();
 
 		// split data/training.txt data/A 10
 		// createRandom model/random
@@ -32,26 +32,34 @@ public class Main {
 
 	}
 
-	private static void handleInput(String[] args) throws Exception {
-		if(args.length ==0){
-			args = readInCommand();
+	private static void handleInput() throws Exception {
+		Scanner s = new Scanner(System.in);
+		// let the user perform as many actions as they like without having
+		// to restart the program every time
+		while (true) {
+			String[] args = readInCommand(s);	
+			// does user want to quit?
+			if (args.length > 0 && args[0].equalsIgnoreCase("quit")) {
+				break;
+			}
+			new MainTaskDelegation(args).exec();
 		}
-		
-		new MainTaskDelegation(args).exec();
-		
 	}
 
-	private static String[] readInCommand() {
-		try (Scanner s = new Scanner(System.in)) {
-			System.out.println("Type '?' or 'help' to get help");
+	private static String[] readInCommand(Scanner s) {
+		String command[] = null;
+		String line = null;
+		
+		System.out.println("Type '?' or 'help' to get help");
 
-			String command[] = null;
-			do {
-				command = s.nextLine().split(" ");
-			} while (command.length == 0);
-
-			return command;
+		if (s.hasNext()) {
+			line = s.nextLine();
 		}
+		if (!line.equals("")) {
+			command = line.split(" ");
+		}
+
+		return command;
 	}
 
 }

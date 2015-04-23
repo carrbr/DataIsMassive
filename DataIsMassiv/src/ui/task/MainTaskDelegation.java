@@ -50,6 +50,7 @@ public class MainTaskDelegation extends TaskCommand {
 		System.out.println("test ?");
 		System.out.println("rmse ?");
 		System.out.println("publish ?");
+		System.out.println("quit");
 	}
 
 }
