@@ -1,4 +1,4 @@
-package ui;
+package ui.task;
 
 import domain.Rating;
 import helper.TextToRatingReader;

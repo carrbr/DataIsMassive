@@ -1,4 +1,4 @@
-package ui;
+package ui.task;
 
 public interface TaskCommand {
 
