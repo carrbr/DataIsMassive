@@ -61,7 +61,19 @@ public class Rating {
 		return true;
 	}
 
-	public double getRating() {
+	public int getUserId() {
+		return userId;
+	}
+
+	public int getMovieId() {
+		return movieId;
+	}
+
+	public int getDateId() {
+		return dateId;
+	}
+
+	public float getRating() {
 		return rating;
 	}
 	

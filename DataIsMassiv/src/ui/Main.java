@@ -58,7 +58,7 @@ public class Main {
 		String command[] = null;
 		String line = null;
 		
-		System.out.println("Type '?' or 'help' to get help");
+		System.out.println("\nType '?' or 'help' to get help");
 
 		if (s.hasNext()) {
 			line = s.nextLine();
