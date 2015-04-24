@@ -3,6 +3,10 @@
  */
 package ui;
 
+import java.util.Scanner;
+
+import ui.task.MainTaskDelegation;
+
 /**
  * Start off point, Task register here to be chosen
  * 
@@ -17,27 +21,37 @@ public class Main {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		// SplitDataTask t = new SplitDataTask("data/training.txt", "data/A",
-		// 10);
-		// t.exec();
+		handleInput(args);
 
-		// CreatRandomModelTask t = new CreatRandomModelTask("model/random");
-		// t.exec();
+		// split data/training.txt data/A 10
+		// creatRandom model/random
+		// test model/random data/A_test data/A_test_result
+		// rmse data/A_test data/A_test_result
+		// test model/random data/test.txt data/result.txt
+		// publish data/result.txt data/
 
-		// TestModelTask t = new TestModelTask("model/random", "data/A_test",
-		// "data/A_test_result");
-		// t.exec();
+	}
 
-		// RMSETask t = new RMSETask("data/A_test", "data/A_test_result");
-		// t.exec();
+	private static void handleInput(String[] args) throws Exception {
+		if(args.length ==0){
+			args = readInCommand();
+		}
+		
+		new MainTaskDelegation(args).exec();
+		
+	}
 
-		// TestModelTask p = new TestModelTask("model/random", "data/test.txt",
-		// "data/result.txt");
-		// p.exec();
+	private static String[] readInCommand() {
+		try (Scanner s = new Scanner(System.in)) {
+			System.out.println("Type '?' or 'help' to get help");
 
-		// PublishResultTask t = new PublishResultTask("data/result.txt",
-		// "data/");
-		// t.exec();
+			String command[] = null;
+			do {
+				command = s.nextLine().split(" ");
+			} while (command.length == 0);
+
+			return command;
+		}
 	}
 
 }

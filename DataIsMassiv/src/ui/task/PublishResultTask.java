@@ -8,7 +8,7 @@ import java.io.FileWriter;
 
 import domain.Rating;
 
-public class PublishResultTask implements TaskCommand {
+public class PublishResultTask extends TaskCommand {
 	private static String listNum = "7120309055_7120309030_5113709785_5113709081.txt";
 	private String toPublish;
 	private String directory;
@@ -17,6 +17,19 @@ public class PublishResultTask implements TaskCommand {
 		this.toPublish = toPublish;
 		this.directory = directory;
 
+	}
+
+	public PublishResultTask(String[] args) {
+		if (needsHelp) {
+			writeHelp();
+			return;
+		}
+		needsHelp = needsHelp(args);
+
+		if (!needsHelp && args.length == 2) {
+			this.toPublish = args[0];
+			this.directory = args[1];
+		}
 	}
 
 	@Override

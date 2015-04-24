@@ -9,7 +9,7 @@ import java.io.IOException;
 
 import domain.Rating;
 
-public class SplitDataTask implements TaskCommand {
+public class SplitDataTask extends TaskCommand {
 
 	private String fileIn;
 	private String fileOut;
@@ -22,16 +22,32 @@ public class SplitDataTask implements TaskCommand {
 
 	}
 
+	public SplitDataTask(String[] args) {
+		needsHelp = needsHelp(args);
+		
+		if (!needsHelp && args.length == 3) {
+			this.fileIn = args[0];
+			this.fileOut = args[1];
+			this.numOfBuckets = Integer.valueOf(args[2]);
+		}
+	}
+
 	@Override
 	public void exec() throws Exception {
+		if(needsHelp){
+			writeHelp();
+			return;
+		}
+		
 		TextToRatingReader ratingsIn = null;
 		BufferedWriter writerTraining = null;
 		BufferedWriter writerTest = null;
 		try {
 			ratingsIn = new TextToRatingReader(fileIn);
-			writerTraining = new BufferedWriter(new FileWriter(
-					new File(fileOut+"_train")));
-			writerTest = new BufferedWriter(new FileWriter(new File(fileOut+"_test")));
+			writerTraining = new BufferedWriter(new FileWriter(new File(fileOut
+					+ "_train")));
+			writerTest = new BufferedWriter(new FileWriter(new File(fileOut
+					+ "_test")));
 
 			divide(ratingsIn, writerTraining, writerTest, numOfBuckets);
 
@@ -57,7 +73,7 @@ public class SplitDataTask implements TaskCommand {
 			if (h == 0) {
 				writerTest.write(r + "\n");
 			} else {
-				writerTraining.write(r+"\n");
+				writerTraining.write(r + "\n");
 			}
 		}
 

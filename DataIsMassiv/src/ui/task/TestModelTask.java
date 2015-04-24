@@ -13,7 +13,7 @@ import java.io.ObjectInputStream;
 import domain.Rating;
 import domain.model.AbstractRatingModel;
 
-public class TestModelTask implements TaskCommand {
+public class TestModelTask extends TaskCommand {
 
 	private String modelFile;
 	private String testFile;
@@ -24,6 +24,20 @@ public class TestModelTask implements TaskCommand {
 		this.testFile = testFile;
 		this.resultFile = resultFile;
 
+	}
+
+	public TestModelTask(String[] args) {
+		if (needsHelp) {
+			writeHelp();
+			return;
+		}
+		needsHelp = needsHelp(args);
+		
+		if (!needsHelp && args.length == 3) {
+			this.modelFile = args[0];
+			this.testFile = args[1];
+			this.resultFile = args[2];
+		}
 	}
 
 	@Override

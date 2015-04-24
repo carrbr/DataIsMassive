@@ -3,7 +3,7 @@ package ui.task;
 import domain.Rating;
 import helper.TextToRatingReader;
 
-public class RMSETask implements TaskCommand {
+public class RMSETask extends TaskCommand {
 
 	private String shouldFile;
 	private String isFile;
@@ -12,6 +12,19 @@ public class RMSETask implements TaskCommand {
 		this.shouldFile = shouldFile;
 		this.isFile = isFile;
 
+	}
+
+	public RMSETask(String[] args) {
+		if (needsHelp) {
+			writeHelp();
+			return;
+		}
+		needsHelp = needsHelp(args);
+
+		if (!needsHelp && args.length == 2) {
+			this.shouldFile = args[0];
+			this.isFile = args[1];
+		}
 	}
 
 	@Override
