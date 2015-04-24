@@ -4,7 +4,23 @@ public abstract class TaskCommand {
 
 	protected boolean needsHelp = false;
 
+	public TaskCommand() {
+
+	}
+
+	public TaskCommand(String args[]) {
+		needsHelp = needsHelp(args);
+	}
+
 	public abstract void exec() throws Exception;
+
+	protected boolean wroteHelp() {
+		if (needsHelp) {
+			writeHelp();
+			return true;
+		}
+		return false;
+	}
 
 	public void writeHelp() {
 		System.out.println(this.getClass().getName()

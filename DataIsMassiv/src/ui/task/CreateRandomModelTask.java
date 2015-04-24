@@ -6,17 +6,17 @@ import java.io.ObjectOutputStream;
 
 import domain.model.RandomModel;
 
-public class CreatRandomModelTask extends TaskCommand {
+public class CreateRandomModelTask extends TaskCommand {
 
 	private String fileOut;
 
-	CreatRandomModelTask(String fileOut) {
+	CreateRandomModelTask(String fileOut) {
 		this.fileOut = fileOut;
 
 	}
 
-	public CreatRandomModelTask(String[] args) {
-		needsHelp = needsHelp(args);
+	public CreateRandomModelTask(String[] args) {
+		super(args);
 
 		if (!needsHelp && args.length == 1) {
 			this.fileOut = args[0];
@@ -25,10 +25,7 @@ public class CreatRandomModelTask extends TaskCommand {
 
 	@Override
 	public void exec() throws Exception {
-		if (needsHelp) {
-			writeHelp();
-			return;
-		}
+		if (wroteHelp()) return;
 
 		ObjectOutputStream oos = null;
 

@@ -27,11 +27,7 @@ public class TestModelTask extends TaskCommand {
 	}
 
 	public TestModelTask(String[] args) {
-		if (needsHelp) {
-			writeHelp();
-			return;
-		}
-		needsHelp = needsHelp(args);
+		super(args);
 		
 		if (!needsHelp && args.length == 3) {
 			this.modelFile = args[0];
@@ -42,6 +38,8 @@ public class TestModelTask extends TaskCommand {
 
 	@Override
 	public void exec() throws Exception {
+		if (wroteHelp()) return;
+		
 		AbstractRatingModel model = readInModel();
 		
 		TextToRatingReader in = null;

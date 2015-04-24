@@ -24,7 +24,7 @@ public class Main {
 		handleInput(args);
 
 		// split data/training.txt data/A 10
-		// creatRandom model/random
+		// createRandom model/random
 		// test model/random data/A_test data/A_test_result
 		// rmse data/A_test data/A_test_result
 		// test model/random data/test.txt data/result.txt

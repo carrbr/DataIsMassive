@@ -5,20 +5,19 @@ public class MainTaskDelegation extends TaskCommand {
 	private String[] args;
 
 	public MainTaskDelegation(String[] args) {
+		super(args);
 		this.args = args;
 	}
 
 	@Override
 	public void exec() throws Exception {
-		if (args.length == 0 || args[0].toLowerCase().matches("\\?|help")) {
-			writeHelp();
-			return;
-		}
+		if (wroteHelp()) return;
+		
 		String[] reduced = removeFirst();
 		if (match(args, "split")) {
 			new SplitDataTask(reduced).exec();
-		} else if (match(args, "creatRandom")) {
-			new CreatRandomModelTask(reduced).exec();
+		} else if (match(args, "createRandom")) {
+			new CreateRandomModelTask(reduced).exec();
 		} else if (match(args, "test")) {
 			new TestModelTask(reduced).exec();
 		} else if (match(args, "rmse")) {

@@ -15,11 +15,8 @@ public class RMSETask extends TaskCommand {
 	}
 
 	public RMSETask(String[] args) {
-		if (needsHelp) {
-			writeHelp();
-			return;
-		}
-		needsHelp = needsHelp(args);
+		super(args);
+		
 
 		if (!needsHelp && args.length == 2) {
 			this.shouldFile = args[0];
@@ -29,6 +26,8 @@ public class RMSETask extends TaskCommand {
 
 	@Override
 	public void exec() throws Exception {
+		if (wroteHelp()) return;
+		
 		TextToRatingReader should = null;
 		TextToRatingReader is = null;
 

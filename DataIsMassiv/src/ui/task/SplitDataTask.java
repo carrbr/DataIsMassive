@@ -23,7 +23,7 @@ public class SplitDataTask extends TaskCommand {
 	}
 
 	public SplitDataTask(String[] args) {
-		needsHelp = needsHelp(args);
+		super(args);
 		
 		if (!needsHelp && args.length == 3) {
 			this.fileIn = args[0];
@@ -34,10 +34,7 @@ public class SplitDataTask extends TaskCommand {
 
 	@Override
 	public void exec() throws Exception {
-		if(needsHelp){
-			writeHelp();
-			return;
-		}
+		if (wroteHelp()) return;
 		
 		TextToRatingReader ratingsIn = null;
 		BufferedWriter writerTraining = null;
