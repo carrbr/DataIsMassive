@@ -28,7 +28,7 @@ public class TestModelTask extends TaskCommand {
 
 	public TestModelTask(String[] args) {
 		super(args);
-		
+
 		if (!needsHelp && args.length == 3) {
 			this.modelFile = args[0];
 			this.testFile = args[1];
@@ -38,30 +38,40 @@ public class TestModelTask extends TaskCommand {
 
 	@Override
 	public void exec() throws Exception {
-		if (wroteHelp()) return;
-		
+		if (writeHelpIfNeeded())
+			return;
+
 		AbstractRatingModel model = readInModel();
-		
+
 		TextToRatingReader in = null;
 		BufferedWriter out = null;
-		
-		try{
+
+		try {
 			in = new TextToRatingReader(testFile);
 			out = new BufferedWriter(new FileWriter(new File(resultFile)));
-			Rating rateTest = null;
-			while((rateTest = in.readNext()) != null){
-				out.write(model.predict(rateTest)+"\n");
-			}
-			
-		}finally{
-			if(in != null) in.close();
-			if(out != null) out.close();
+
+			testEachLine(model, in, out);
+
+		} finally {
+			if (in != null)
+				in.close();
+			if (out != null)
+				out.close();
 		}
 	}
 
-	private AbstractRatingModel readInModel() throws IOException, ClassNotFoundException,
-			FileNotFoundException {
-		try(ObjectInputStream ois = new ObjectInputStream(new FileInputStream(new File(modelFile)))){
+	private void testEachLine(AbstractRatingModel model, TextToRatingReader in,
+			BufferedWriter out) throws IOException {
+		Rating rateTest = null;
+		while ((rateTest = in.readNext()) != null) {
+			out.write(model.predict(rateTest) + "\n");
+		}
+	}
+
+	private AbstractRatingModel readInModel() throws IOException,
+			ClassNotFoundException, FileNotFoundException {
+		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(
+				new File(modelFile)))) {
 			return (AbstractRatingModel) ois.readObject();
 		}
 	}

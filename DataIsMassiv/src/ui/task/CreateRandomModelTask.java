@@ -25,7 +25,8 @@ public class CreateRandomModelTask extends TaskCommand {
 
 	@Override
 	public void exec() throws Exception {
-		if (wroteHelp()) return;
+		if (writeHelpIfNeeded())
+			return;
 
 		ObjectOutputStream oos = null;
 

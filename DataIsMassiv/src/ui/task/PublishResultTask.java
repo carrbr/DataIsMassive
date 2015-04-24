@@ -5,6 +5,7 @@ import helper.TextToRatingReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 
 import domain.Rating;
 
@@ -30,8 +31,9 @@ public class PublishResultTask extends TaskCommand {
 
 	@Override
 	public void exec() throws Exception {
-		if (wroteHelp()) return;
-		
+		if (writeHelpIfNeeded())
+			return;
+
 		TextToRatingReader in = null;
 		BufferedWriter out = null;
 
@@ -39,16 +41,22 @@ public class PublishResultTask extends TaskCommand {
 			in = new TextToRatingReader(toPublish);
 			out = new BufferedWriter(new FileWriter(new File(directory
 					+ listNum)));
-			Rating rate = null;
-			while ((rate = in.readNext()) != null) {
-				out.write(rate.getNiceFormatRating() + "\n");
-			}
+
+			removeAllBurRetainRating(in, out);
 
 		} finally {
 			if (in != null)
 				in.close();
 			if (out != null)
 				out.close();
+		}
+	}
+
+	private void removeAllBurRetainRating(TextToRatingReader in,
+			BufferedWriter out) throws IOException {
+		Rating rate = null;
+		while ((rate = in.readNext()) != null) {
+			out.write(rate.getNiceFormatRating() + "\n");
 		}
 	}
 }

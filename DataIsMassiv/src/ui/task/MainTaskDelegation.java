@@ -11,8 +11,9 @@ public class MainTaskDelegation extends TaskCommand {
 
 	@Override
 	public void exec() throws Exception {
-		if (wroteHelp()) return;
-		
+		if (writeHelpIfNeeded())
+			return;
+
 		String[] reduced = removeFirst();
 		if (match(args, "split")) {
 			new SplitDataTask(reduced).exec();
@@ -24,7 +25,7 @@ public class MainTaskDelegation extends TaskCommand {
 			new RMSETask(reduced).exec();
 		} else if (match(args, "publish")) {
 			new PublishResultTask(reduced).exec();
-		}else{
+		} else {
 			System.out.println("No matching command found");
 			writeHelp();
 		}
