@@ -59,7 +59,7 @@ public class Main {
 		String command[] = null;
 		do {
 			command = scan.nextLine().split(" ");
-		} while (command.length == 0 || command[0].equals(""));
+		} while (command[0].equals(""));
 		return command;
 	}
 
