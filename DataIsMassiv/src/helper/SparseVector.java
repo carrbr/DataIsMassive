@@ -109,9 +109,17 @@ public class SparseVector<E> implements List<E> {
 
 	@Override
 	public int indexOf(Object arg0) {
-		if (this.data.containsKey(arg0)) {
+		if (arg0 == null) { // handle case of sparse element index check
 			for (int i = 0; i < this.size; i++) {
-				if (this.data.get(i).equals(arg0)) {
+				E curr = this.data.get(i);
+				if (curr == null) {
+					return i;
+				}
+			}
+		} else if (this.data.containsKey(arg0)) {
+			for (int i = 0; i < this.size; i++) {
+				E curr = this.data.get(i);
+				if (curr != null && curr.equals(arg0)) {
 					return i;
 				}
 			}
@@ -121,9 +129,17 @@ public class SparseVector<E> implements List<E> {
 
 	@Override
 	public int lastIndexOf(Object arg0) {
-		if (this.data.containsKey(arg0)) {
-			for (int i = this.size - 1; i < this.size; i--) {
-				if (this.data.get(i).equals(arg0)) {
+		if (arg0 == null) { // handle case of sparse element index check
+			for (int i = this.size - 1; i >= 0; i--) {
+				E curr = this.data.get(i);
+				if (curr == null) {
+					return i;
+				}
+			}
+		} else if (this.data.containsKey(arg0)) {
+			for (int i = this.size - 1; i >= 0; i--) {
+				E curr = this.data.get(i);
+				if (curr != null && curr.equals(arg0)) {
 					return i;
 				}
 			}
