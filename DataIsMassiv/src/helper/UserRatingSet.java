@@ -70,6 +70,15 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>> {
 	}
 	
 	/**
+	 * 
+	 * @param urs
+	 * UserRatingSet to be merged with <code>this</code>
+	 */
+	public void merge(UserRatingSet urs) {
+		// TODO implement this stub
+	}
+	
+	/**
 	 * Look but no touch.  Not a petting zoo.  Window shopping only.
 	 * 
 	 * If you modify anything through this iterator it will probably eat your soul.

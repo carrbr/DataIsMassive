@@ -15,13 +15,15 @@ import domain.Rating;
 public class CollaborativeFilteringModel extends AbstractRatingModel {
 	private static final long serialVersionUID = 8557616341507027600L;
 	private String trainingSetFile;
-	private UserRatingSet urs;
+	private String testSetFile;
+	private UserRatingSet trainSet;
+	private UserRatingSet testSet;
 	private int numSimilarUsers;
 
-	public CollaborativeFilteringModel(String trainingSetFile, int n) {
+	public CollaborativeFilteringModel(String trainingSetFile, String testSetFile, int n) {
 		super();
 		this.trainingSetFile = trainingSetFile;
-		this.urs = new UserRatingSet();
+		this.testSetFile = testSetFile;
 		this.numSimilarUsers = n;
 		
 		// may want to put this elsewhere later, but for now we will incur cost
@@ -31,19 +33,43 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	
 	@Override
 	public Rating predict(Rating r) {
-		Queue<SimilarUser> simUsers = findNSimilarUsers();
 
 		return r.reRate(5); // TODO: fix this...obviously
 	}
 	
 	private void buildModel() {
-		buildRatingSet();
-		urs.subtractRowMeansFromEachRating();
+		trainSet = buildRatingSet(this.trainingSetFile);
+		testSet = buildTestRatingSet(this.testSetFile, trainSet);
+		trainSet.subtractRowMeansFromEachRating();
+		// we need to find our similar users for each user in the test set
+		Queue<SimilarUser> simUsers = findNSimilarUsers(trainSet);
 	}
 	
-	private void buildRatingSet() {
+	/**
+	 * 
+	 * @param fname
+	 * this is the filename for the test set data
+	 * @param tset
+	 * this should be a UserRatingSet containing the corresponding training set data
+	 * @return
+	 * This function will return a UserRatingSet containing the test set data (which doesn't
+	 * contain movie rating values), merged with the training set data
+	 */
+	private UserRatingSet buildTestRatingSet(String fname, UserRatingSet tset) {		
+		// build up the basic data structure
+		UserRatingSet urs = buildRatingSet(fname);
+		
+		// fill in all the missing movie rating data for each user in test set using training set
+		urs.merge(tset);
+		
+		return urs;
+	}
+	
+	private UserRatingSet buildRatingSet(String fName) {
+		UserRatingSet urs = new UserRatingSet();
+		
 		try {
-			TextToRatingReader ratingReader = new TextToRatingReader(trainingSetFile);
+			TextToRatingReader ratingReader = new TextToRatingReader(fName);
 			
 			// build up our rating set
 			Rating rating = null;
@@ -62,7 +88,7 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 			}
 			ratingReader.close();
 		} catch (FileNotFoundException e) {
-			System.err.println("CollaborativeFilteringModel.buildModel: Failed to open training set file, at path: " + trainingSetFile);
+			System.err.println("CollaborativeFilteringModel.buildModel: Failed to open training set file, at path: " + fName);
 			e.printStackTrace();
 			System.exit(1);
 		} catch (IOException e) {
@@ -70,6 +96,8 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 			e.printStackTrace();
 			System.exit(1);
 		}
+		
+		return urs;
 	}
 	
 	/*
@@ -85,7 +113,7 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 		}
 	}
 	
-	private Queue<SimilarUser> findNSimilarUsers() {
+	private Queue<SimilarUser> findNSimilarUsers(UserRatingSet urs, ArrayList<Rating> user) {
 		Queue<SimilarUser> simUsers = new PriorityQueue<SimilarUser>();
 		Iterator<ArrayList<Rating>> ursIt = urs.iterator();
 		
