@@ -92,10 +92,22 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 		return ((int) (netScala * 40 + 10)) / 10.0;
 	}
 
-	@Override
-	public Rating predict(Rating r) {
-		// TODO Auto-generated method stub
-		return null;
+	private float rate(Rating rating) {
+		RealVector in = getNetworkInputFor(rating);
+		RealVector out = nn.respond(in);
+		return (float) out.getEntry(0);
 	}
 
+	private RealVector getNetworkInputFor(Rating r) {
+		RealVector vTime = generateTimeVector(r.getDateId());
+		RealVector vUser = generateTimeVector(r.getUserId());
+		RealVector vMovie = generateTimeVector(r.getMovieId());
+		RealVector in = vTime.append(vUser).append(vMovie);
+		return in;
+	}
+
+	@Override
+	public Rating predict(Rating r) {
+		return r.reRate(rate(r));
+	}
 }

@@ -87,6 +87,16 @@ public class Neural3LayerNetwork implements Serializable {
 	private static RealVector dropLast(RealVector delta) {
 		return delta.getSubVector(0, delta.getDimension() - 1);
 	}
+	
+	public RealVector respond(RealVector input) {
+		RealVector outhidhid = hh.operate(input.append(1));
+		sigmoid(outhidhid);
+		RealVector outhid = h.operate(outhidhid.append(1));
+		sigmoid(outhid);
+		RealVector out = o.operate(outhid.append(1));
+		sigmoid(out);
+		return out;
+	}
 
 	/**
 	 * derivation of sigmoid to find the way down (gradient decent)
