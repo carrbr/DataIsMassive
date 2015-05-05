@@ -25,6 +25,10 @@ public class MainTaskDelegation extends TaskCommand {
 			new RMSETask(reduced).exec();
 		} else if (match(args, "publish")) {
 			new PublishResultTask(reduced).exec();
+		} else if (match(args, "createNN")) {
+			new CreateNeuralModelTask(reduced).exec();
+		} else if (match(args, "trainNN")) {
+			new TrainNNTask(reduced).exec();
 		} else {
 			System.out.println("No matching command found");
 			writeHelp();

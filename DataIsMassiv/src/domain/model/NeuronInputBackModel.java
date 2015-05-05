@@ -33,7 +33,7 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 		vecUser = 100;
 		vecMovies = 100;
 		int inputCount = vecTime + vecUser + vecMovies;
-		nn = new Neural3LayerNetwork(inputCount, inputCount / 2, 30, 1);
+		nn = new Neural3LayerNetwork(inputCount, 60, 30, 1);
 		user = new HashMap<>();
 		movies = new HashMap<>();
 		newUserVec = new double[vecUser];
@@ -71,6 +71,18 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 		return v;
 	}
 
+	private void mixMovieVector(int movieId, RealVector deltaMovie, double d) {
+		RealVector v = movies.get(movieId);
+		v = v.add(deltaMovie.mapMultiply(d));
+		movies.put(movieId, v);
+	}
+
+	private void mixUserVector(int userId, RealVector deltaUser, double d) {
+		RealVector v = user.get(userId);
+		v = v.add(deltaUser.mapMultiply(d));
+		user.put(userId, v);
+	}
+
 	private RealVector generateTimeVector(int time) {
 		// First in 4 is frequeny, other 3 are phase translation
 		double[][] para = { { 4984, 0, 1.1, 2.5 }, { 3562.43, .25, 1.6, 2.1 },
@@ -92,16 +104,41 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 		return ((int) (netScala * 40 + 10)) / 10.0;
 	}
 
+	public void trainSingle(Rating rating) {
+		RealVector correctionResponse = nn.learn(getNetworkInputFor(rating),
+				getPerfectResponseFor(rating));
+		correctInputOf(rating, correctionResponse);
+	}
+
+	private RealVector getPerfectResponseFor(Rating rating) {
+		double[] r = new double[1];
+		r[0] = rating.getRating();
+		r[0] -= 1;
+		r[0] /= 4;
+		return MatrixUtils.createRealVector(r);
+	}
+
+	private void correctInputOf(Rating rating, RealVector correctionResponse) {
+		RealVector deltaUser = correctionResponse
+				.getSubVector(vecTime, vecUser);
+		mixUserVector(rating.getUserId(), deltaUser, .2);
+
+		RealVector deltaMovie = correctionResponse.getSubVector(vecTime
+				+ vecUser, vecMovies);
+		mixMovieVector(rating.getMovieId(), deltaMovie, .2);
+
+	}
+
 	private float rate(Rating rating) {
 		RealVector in = getNetworkInputFor(rating);
 		RealVector out = nn.respond(in);
-		return (float) out.getEntry(0);
+		return (float) predictionRescaleNetworkToMovieScale(out.getEntry(0));
 	}
 
 	private RealVector getNetworkInputFor(Rating r) {
 		RealVector vTime = generateTimeVector(r.getDateId());
-		RealVector vUser = generateTimeVector(r.getUserId());
-		RealVector vMovie = generateTimeVector(r.getMovieId());
+		RealVector vUser = getUserVector(r.getUserId());
+		RealVector vMovie = getMovieVector(r.getMovieId());
 		RealVector in = vTime.append(vUser).append(vMovie);
 		return in;
 	}

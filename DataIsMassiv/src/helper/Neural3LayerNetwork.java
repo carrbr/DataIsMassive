@@ -76,6 +76,7 @@ public class Neural3LayerNetwork implements Serializable {
 		o = o.add(outdelta.outerProduct(outhid.mapMultiply(eta)));
 		h = h.add(dropLast(hiddelta.outerProduct(outhidhid.mapMultiply(eta))));
 		hh = hh.add(dropLast(hidhiddelta.outerProduct(input.mapMultiply(eta))));
+		
 		return dropLast(inputdelta);
 	}
 

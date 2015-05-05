@@ -3,9 +3,13 @@
  */
 package ui;
 
+import helper.TextToRatingReader;
+
 import java.util.Scanner;
 
 import ui.task.MainTaskDelegation;
+import domain.Rating;
+import domain.model.NeuronInputBackModel;
 
 /**
  * Start off point, Task register here to be chosen
@@ -20,6 +24,22 @@ public class Main {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
+		// NeuronInputBackModel nm = new NeuronInputBackModel();
+		// TextToRatingReader read = null;
+		// try {
+		// read = new TextToRatingReader("data/A_train");
+		// Rating r = null;
+		// int i = 210000;
+		// long start = System.currentTimeMillis();
+		// while ((r = read.readNext()) != null && i-- > 0) {
+		// nm.predict(r);
+		// }
+		// System.out.println("done normaly");
+		// System.out.println((System.currentTimeMillis()-start)/1000.0);
+		// } finally {
+		// if (read == null)
+		// read.close();
+		// }
 
 		handleInput(args);
 
@@ -29,6 +49,13 @@ public class Main {
 		// rmse data/A_test data/A_test_result
 		// test model/random data/test.txt data/result.txt
 		// publish data/result.txt data/
+
+		// createNN model/NN
+		// test model/NN data/A_test data/A_test_result
+		// rmse data/A_test data/A_test_result
+		// trainNN model/NN model/NN2 data/A_test 500000
+		// test model/NN2 data/A_test data/A_test_result
+		// rmse data/A_test data/A_test_result
 
 	}
 
