@@ -1,5 +1,6 @@
 package domain.model;
 
+import helper.SparseRatingVector;
 import helper.TextToRatingReader;
 import helper.UserRatingSet;
 
@@ -10,6 +11,7 @@ import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
+import no.uib.cipr.matrix.sparse.SparseVector;
 import domain.Rating;
 
 public class CollaborativeFilteringModel extends AbstractRatingModel {
@@ -19,6 +21,7 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	private UserRatingSet trainSet;
 	private UserRatingSet testSet;
 	private int numSimilarUsers;
+	private Queue<SimilarUser>[] similarUsers; // array of groups of n users similar to user at index
 
 	public CollaborativeFilteringModel(String trainingSetFile, String testSetFile, int n) {
 		super();
@@ -39,10 +42,20 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	
 	private void buildModel() {
 		trainSet = buildRatingSet(this.trainingSetFile);
-		testSet = buildTestRatingSet(this.testSetFile, trainSet);
+		testSet = buildTestRatingSet(this.testSetFile, trainSet); // TODO don't thing we actually need this
 		trainSet.subtractRowMeansFromEachRating();
+		
+		int numMovies = 0; // TODO get this value from somewhere!
+		
 		// we need to find our similar users for each user in the test set
-		Queue<SimilarUser> simUsers = findNSimilarUsers(trainSet);
+		Iterator<ArrayList<Rating>> trainIt = trainSet.iterator();
+		ArrayList<Rating> userRatingList = null;
+		Queue<SimilarUser> simUsers = null;
+		while (trainIt.hasNext()) {
+			userRatingList = trainIt.next();
+			simUsers = findNSimilarUsers(numSimilarUsers, trainSet, sparseVectorFromRatingList(userRatingList, numMovies), numMovies);
+			similarUsers[userRatingList.get(0).getUserId()] = simUsers;
+		}
 	}
 	
 	/**
@@ -103,7 +116,7 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	/*
 	 * nested class for storing userIds and their similarity to the queried user together 
 	 */
-	private class SimilarUser {
+	private class SimilarUser implements Comparable<SimilarUser> {
 		public int id;
 		public float similarity;
 		
@@ -111,26 +124,38 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 			this.id = id;
 			this.similarity = similarity;
 		}
+
+		@Override
+		public int compareTo(SimilarUser user) {
+			int result = 0;
+			if (this.similarity > user.similarity) {
+				result = 1;
+			} else if (this.similarity > user.similarity) {
+				result = -1;
+			}
+			return result;
+		}
 	}
 	
-	private Queue<SimilarUser> findNSimilarUsers(UserRatingSet urs, ArrayList<Rating> user) {
+	private Queue<SimilarUser> findNSimilarUsers(int n, UserRatingSet urs, SparseVector userRatingList, int size) {
 		Queue<SimilarUser> simUsers = new PriorityQueue<SimilarUser>();
 		Iterator<ArrayList<Rating>> ursIt = urs.iterator();
 		
 		// note, this assumes the number of ratings > numSimilarUsers
 		int i = 0;
-		ArrayList<Rating> userVector = null;
+		ArrayList<Rating> ratingList = null;
 		while (ursIt.hasNext()) {
-			userVector = ursIt.next();
+			ratingList = ursIt.next();
 			// first we fill up the PriorityQueue
-			if (i < numSimilarUsers) {
-				simUsers.add(new SimilarUser(userVector.get(0).getUserId(), findSimilarity(userVector, userVector))); // TODO replace one vector arg
+			if (i < n) {
+				simUsers.add(new SimilarUser(ratingList.get(0).getUserId(), 
+						findSimilarity(userRatingList, sparseVectorFromRatingList(ratingList, size))));
 			} else { 
-				float currentSim = findSimilarity(userVector, userVector); // TODO fix this line
+				float currentSim = findSimilarity(userRatingList, sparseVectorFromRatingList(ratingList, size));
 				if (currentSim > simUsers.peek().similarity) {
 					// add this user and drop current least similar user
 					simUsers.poll();
-					simUsers.add(new SimilarUser(userVector.get(0).getUserId(), currentSim));
+					simUsers.add(new SimilarUser(ratingList.get(0).getUserId(), currentSim));
 				}
 			}
 			i++;
@@ -138,7 +163,21 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 		return simUsers;
 	}
 	
-	private float findSimilarity(ArrayList<Rating> u, ArrayList<Rating> v) {
+	private SparseVector sparseVectorFromRatingList(ArrayList<Rating> userRatings, int size) {
+		double[] ratings = new double[userRatings.size()];
+		int [] indexes = new int[userRatings.size()];
+		
+		// index each rating by movieID
+		Rating r = null;
+		for (int i = 0; i < userRatings.size(); i++) {
+			r = userRatings.get(i);
+			ratings[i] = r.getRating();
+			indexes[i] = r.getMovieId();
+		}
+		return new SparseVector(size, indexes, ratings);
+	}
+	
+	private float findSimilarity(SparseVector u, SparseVector v) {
 		// TODO this is only a stub
 		return (float) 0.0;
 	}
