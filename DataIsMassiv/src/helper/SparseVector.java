@@ -7,6 +7,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import no.uib.cipr.matrix.DenseMatrix;
+
 public class SparseVector<E> implements List<E> {
 	Map<Integer, E> data;	// internal data representation
 	int size;	// current size of the vector
