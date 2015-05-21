@@ -1,4 +1,4 @@
-package helper;
+package domain;
 
 import java.io.Serializable;
 import java.util.Random;
@@ -10,11 +10,46 @@ import org.apache.commons.math3.linear.RealVectorChangingVisitor;
 
 public class Neural3LayerNetwork implements Serializable {
 	private static final long serialVersionUID = 1L;
-	private static final double eta = .5;
 	private static double a = .3;
 	private RealMatrix hh;
 	private RealMatrix h;
 	private RealMatrix o;
+
+	public static class LearnResponse {
+		public RealVector inputDelta;
+		public RealMatrix hhDelta;
+		public RealMatrix hDelta;
+		public RealMatrix oDelta;
+
+		public void mergeWith(LearnResponse lr) {
+			if (hhDelta != null)
+				hhDelta = hhDelta.add(lr.hhDelta);
+			else
+				hhDelta = lr.hhDelta;
+
+			if (hDelta != null)
+				hDelta = hDelta.add(lr.hDelta);
+			else
+				hDelta = lr.hDelta;
+
+			if (oDelta != null)
+				oDelta = oDelta.add(lr.oDelta);
+			else
+				oDelta = lr.oDelta;
+		}
+
+		public void avgSumFactor(int stepcount) {
+			if (hhDelta != null)
+				hhDelta = hhDelta.scalarMultiply(1.0 / stepcount);
+
+			if (hDelta != null)
+				hDelta = hDelta.scalarMultiply(1.0 / stepcount);
+
+			if (oDelta != null)
+				oDelta = oDelta.scalarMultiply(1.0 / stepcount);
+
+		}
+	}
 
 	public Neural3LayerNetwork(int i, int hh, int h, int o) {
 		this.hh = MatrixUtils.createRealMatrix(hh, i + 1);
@@ -49,7 +84,8 @@ public class Neural3LayerNetwork implements Serializable {
 	 *            hoped for response
 	 * @return delta for input to get better result
 	 */
-	public RealVector learn(RealVector input, RealVector response) {
+	public LearnResponse learn(RealVector input, RealVector response) {
+		LearnResponse lr = new LearnResponse();
 		// Responses
 		input = input.append(1); // Adding Neuron Baias to input
 		RealVector outhidhid = hh.operate(input);
@@ -73,22 +109,21 @@ public class Neural3LayerNetwork implements Serializable {
 		RealVector inputdelta = chainDiff(input, dropLast(hidhiddelta), hh);
 
 		// Current + Correction = next
-		o = o.add(outdelta.outerProduct(outhid.mapMultiply(eta)));
-		h = h.add(dropLast(hiddelta.outerProduct(outhidhid.mapMultiply(eta))));
-		hh = hh.add(dropLast(hidhiddelta.outerProduct(input.mapMultiply(eta))));
-		
-		return dropLast(inputdelta);
+		// But because parallel we do batch learning
+		lr.oDelta = outdelta.outerProduct(outhid);
+		lr.hDelta = dropLast(hiddelta.outerProduct(outhidhid));
+		lr.hhDelta = dropLast(hidhiddelta.outerProduct(input));
+		lr.inputDelta = dropLast(inputdelta);
+
+		/*
+		 * o = o.add(outdelta.outerProduct(outhid.mapMultiply(eta))); h =
+		 * h.add(dropLast(hiddelta.outerProduct(outhidhid.mapMultiply(eta))));
+		 * hh =
+		 * hh.add(dropLast(hidhiddelta.outerProduct(input.mapMultiply(eta))));
+		 */
+		return lr;
 	}
 
-	private RealMatrix dropLast(RealMatrix m) {
-		return m.getSubMatrix(0, m.getRowDimension() - 2, 0,
-				m.getColumnDimension() - 1);
-	}
-
-	private static RealVector dropLast(RealVector delta) {
-		return delta.getSubVector(0, delta.getDimension() - 1);
-	}
-	
 	public RealVector respond(RealVector input) {
 		RealVector outhidhid = hh.operate(input.append(1));
 		sigmoid(outhidhid);
@@ -124,6 +159,15 @@ public class Neural3LayerNetwork implements Serializable {
 		return sigmoDiff(outLayer).ebeMultiply(chain);
 	}
 
+	static private RealMatrix dropLast(RealMatrix m) {
+		return m.getSubMatrix(0, m.getRowDimension() - 2, 0,
+				m.getColumnDimension() - 1);
+	}
+
+	private static RealVector dropLast(RealVector delta) {
+		return delta.getSubVector(0, delta.getDimension() - 1);
+	}
+
 	/**
 	 * non linear function for higher order approximation
 	 * 
@@ -146,5 +190,13 @@ public class Neural3LayerNetwork implements Serializable {
 				return 0;
 			}
 		});
+	}
+
+	public void writeLayerUpdate(LearnResponse response,
+			LearningCardNN howToLearn) {
+		o = o.add(response.oDelta.scalarMultiply(howToLearn.etaNN));
+		h = h.add(response.hDelta.scalarMultiply(howToLearn.etaNN));
+		hh = hh.add(response.hhDelta.scalarMultiply(howToLearn.etaNN));
+
 	}
 }

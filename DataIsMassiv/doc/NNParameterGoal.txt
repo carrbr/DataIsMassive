@@ -1,0 +1,24 @@
+This file is a temporary for the NN(Neural Network) model. 
+Target: 
+- make NN parallel
+- make learning card, that describes a learning session of the NN
+
+
+Parameters for learning:
+eta NN: the learning rate in the Network
+eta Input: the learning rate of the input
+eta movie/user?
+Reset of input to newVector movie or user(to train 'only' input)
+Reset rate movie/user (to train NN/input)
+Fake input rate (to only train NN)
+
+a: used to define the steepness of the sigmoid function (normally constant)
+length of time/movie/user: constant after model creation (hard to change, because a lot of Matrix changes)
+
+
+double etaNN
+double etaMovie
+double etaUser
+boolean resetMovie
+boolean resetUser
+double 

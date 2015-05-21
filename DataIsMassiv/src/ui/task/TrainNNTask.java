@@ -11,8 +11,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
+import domain.LearningCardNN;
 import domain.Rating;
 import domain.model.NeuronInputBackModel;
 
@@ -22,6 +22,7 @@ public class TrainNNTask extends TaskCommand {
 	private String fileOut;
 	private String fileTrainSet;
 	private int numOfQuestions;
+	private LearningCardNN howToLearn;
 
 	public TrainNNTask(String[] args) {
 		super(args);
@@ -31,7 +32,22 @@ public class TrainNNTask extends TaskCommand {
 			this.fileOut = args[1];
 			this.fileTrainSet = args[2];
 			this.numOfQuestions = Integer.valueOf(args[3]);
+			setUPLearningCard();
 		}
+	}
+
+	private void setUPLearningCard() {
+		howToLearn = new LearningCardNN();
+		howToLearn.etaNN = .4;
+		howToLearn.etaMovie = .5;
+		howToLearn.etaUser = .5;
+
+		howToLearn.resetMovie = false;
+		howToLearn.resetUser = false;
+
+		howToLearn.resetRateMovie = .005;
+		howToLearn.resetRateUser = .007;
+
 	}
 
 	@Override
@@ -41,20 +57,9 @@ public class TrainNNTask extends TaskCommand {
 		NeuronInputBackModel model = readInModel(fileIn);
 		List<Rating> trainSet = readInTrainSet(fileTrainSet);
 
-		train(model, trainSet, numOfQuestions);
+		model.trainParallel(trainSet, howToLearn, numOfQuestions);
 
 		writeOutModel(fileOut, model);
-	}
-
-	private void train(NeuronInputBackModel model, List<Rating> trainSet,
-			int counts) {
-		Random rand = new Random();
-		Rating rating;
-		while(counts-- > 0){
-			rating = trainSet.get(rand.nextInt(trainSet.size()));
-			model.trainSingle(rating);
-		}
-		
 	}
 
 	private List<Rating> readInTrainSet(String fileTrainSet) throws IOException {
