@@ -1,6 +1,5 @@
 package domain.model;
 
-import helper.SparseRatingVector;
 import helper.TextToRatingReader;
 import helper.UserRatingSet;
 
