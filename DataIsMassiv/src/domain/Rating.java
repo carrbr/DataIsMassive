@@ -1,4 +1,3 @@
-
 package domain;
 
 public class Rating {
@@ -29,6 +28,10 @@ public class Rating {
 
 	public int getDateId() {
 		return dateId;
+	}
+
+	public float getRating() {
+		return rating;
 	}
 
 	public Rating reRate(float newRating){
@@ -73,22 +76,6 @@ public class Rating {
 		return true;
 	}
 
-	public int getUserId() {
-		return userId;
-	}
-
-	public int getMovieId() {
-		return movieId;
-	}
-
-	public int getDateId() {
-		return dateId;
-	}
-
-	public float getRating() {
-		return rating;
-	}
-	
 	public double getNiceFormatRating() {
 		return (int)(rating*10)/(10.0);
 	}
