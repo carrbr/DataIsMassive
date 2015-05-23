@@ -20,7 +20,7 @@ public class Main {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-
+		
 		handleInput(args);
 
 		// split data/training.txt data/A 10
@@ -30,42 +30,44 @@ public class Main {
 		// test model/random data/test.txt data/result.txt
 		// publish data/result.txt data/
 
+		// createNN model/NN
+		// test model/NN data/A_test data/A_test_result
+		// rmse data/A_test data/A_test_result
+		// trainNN model/NN model/NN2 data/A_test 500000
+		// test model/NN2 data/A_test data/A_test_result
+		// rmse data/A_test data/A_test_result
+		// trainNN model/NN3_1 model/NN3_2 data/training.txt 21000000
+
 	}
 
-	private static void handleInput(String [] args) throws Exception {
-		Scanner s = new Scanner(System.in);
-		
-		// check if we are running a batch job from a script or an interactive, user job
-		if (args.length == 0) { // no args -> interactive, user job
-			// let the user perform as many actions as they like without having
-			// to restart the program every time
+	private static void handleInput(String[] args) throws Exception {
+		if (args.length == 0)
+			interactiveMode();
+		else
+			new MainTaskDelegation(args).exec();
+	}
+
+	private static void interactiveMode() throws Exception {
+
+		System.out.println("Type '?' or 'help' to get help\n"
+				+ "Type 'quit' or 'q' to quit, who would have guessed?");
+
+		try (Scanner scan = new Scanner(System.in)) {
 			while (true) {
-				args = readInCommand(s);	
-				// does user want to quit?
-				if (args.length > 0 && args[0].equalsIgnoreCase("quit")) {
+				String[] args = readInCommand(scan);
+				if (args.length > 0 && args[0].toLowerCase().matches("quit|q"))
 					break;
-				}
 				new MainTaskDelegation(args).exec();
 			}
-		} else { // batch job with command line args
-			new MainTaskDelegation(args).exec();
 		}
-		
-		s.close();
 	}
 
-	private static String[] readInCommand(Scanner s) {
+	private static String[] readInCommand(Scanner scan) {
+
 		String command[] = null;
-		String line = null;
-		
-		System.out.println("\nType '?' or 'help' to get help");
-
-		if (s.hasNext()) {
-			line = s.nextLine();
-		}
-		command = line.split(" ");
-
-
+		do {
+			command = scan.nextLine().split(" ");
+		} while (command[0].equals(""));
 		return command;
 	}
 

@@ -38,7 +38,7 @@ public class RMSETask extends TaskCommand {
 			is = new TextToRatingReader(isFile);
 
 			double rmse = calculateError(should, is);
-			System.out.println("The RMSE is: " + Math.sqrt(rmse));
+			System.out.println("The RMSE is: " + rmse);
 		} finally {
 			if (should != null)
 				should.close();
@@ -58,7 +58,7 @@ public class RMSETask extends TaskCommand {
 			err += squareError(isRating, shouldRating);
 			n++;
 		}
-		return err / n;
+		return Math.sqrt(err / n);
 	}
 
 	private double squareError(Rating isRating, Rating shouldRating) {

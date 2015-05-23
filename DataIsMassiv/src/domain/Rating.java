@@ -19,6 +19,18 @@ public class Rating {
 	}
 
 	
+	public int getUserId() {
+		return userId;
+	}
+
+	public int getMovieId() {
+		return movieId;
+	}
+
+	public int getDateId() {
+		return dateId;
+	}
+
 	public Rating reRate(float newRating){
 		return new Rating(userId, movieId, dateId, newRating);
 	}
