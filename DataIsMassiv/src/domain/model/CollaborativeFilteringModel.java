@@ -1,11 +1,13 @@
 package domain.model;
 
+import helper.SimilarUser;
 import helper.TextToRatingReader;
 import helper.UserRatingSet;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -34,26 +36,39 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	@Override
 	public Rating predict(Rating r) {
 		Rating result = r.reRate((float)generateRatingFromSimilar(similarUsers.get(r.getUserId()), trainSet, r.getMovieId()));
-		similarUsers = new ArrayList<Queue<SimilarUser>>();
 		return result;
 	}
 		
 	private void buildModel() {
-		trainSet = buildRatingSet(this.trainingSetFile);
+		System.out.println("Building Model...");
+		this.trainSet = buildRatingSet(this.trainingSetFile);
+		System.out.println("Rating Set Built");
 
-		trainSet.subtractRowMeansFromEachRating();
+		this.trainSet.subtractRowMeansFromEachRating();
+		System.out.println("Rating Set Normalized");
 		
 		int numMovies = trainSet.getMaxMovieId(); // Note: this will work in most cases, but it really is just a heuristic.  If we have problems this will need to change
 		
+		System.out.println("Finding Similar Users...");
+		this.similarUsers = initSimUserArrayList(trainSet.getMaxUserId() + 1);
 		// we need to find our similar users for each user in the test set
 		Iterator<ArrayList<Rating>> trainIt = trainSet.iterator();
 		ArrayList<Rating> userRatingList = null;
 		Queue<SimilarUser> simUsers = null;
 		while (trainIt.hasNext()) {
 			userRatingList = trainIt.next();
-			simUsers = findNSimilarUsers(numSimilarUsers, trainSet, sparseVectorFromRatingList(userRatingList, numMovies), numMovies);
-			similarUsers.add(userRatingList.get(0).getUserId(), simUsers);
+			simUsers = findNSimilarUsers(numSimilarUsers, this.trainSet, sparseVectorFromRatingList(userRatingList, numMovies + 1), numMovies);
+			this.similarUsers.add(userRatingList.get(0).getUserId(), simUsers);
 		}
+		System.out.println("Model Built");
+	}
+	
+	private ArrayList<Queue<SimilarUser>> initSimUserArrayList(int size) {
+		ArrayList<Queue<SimilarUser>> arrList = new ArrayList<Queue<SimilarUser>>(size);
+		for(; size > 0; size --) {
+			arrList.add(null);
+		}
+		return arrList;
 	}
 	
 	private UserRatingSet buildRatingSet(String fName) {
@@ -110,32 +125,7 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 		
 		return result / count;
 	}
-
-	
-	/*
-	 * nested class for storing userIds and their similarity to the queried user together 
-	 */
-	private class SimilarUser implements Comparable<SimilarUser> {
-		public int id;
-		public double similarity;
 		
-		public SimilarUser(int id, double similarity) {
-			this.id = id;
-			this.similarity = similarity;
-		}
-
-		@Override
-		public int compareTo(SimilarUser user) {
-			int result = 0;
-			if (this.similarity > user.similarity) {
-				result = 1;
-			} else if (this.similarity > user.similarity) {
-				result = -1;
-			}
-			return result;
-		}
-	}
-	
 	private Queue<SimilarUser> findNSimilarUsers(int n, UserRatingSet urs, SparseVector userRatingList, int size) {
 		Queue<SimilarUser> simUsers = new PriorityQueue<SimilarUser>();
 		Iterator<ArrayList<Rating>> ursIt = urs.iterator();
@@ -148,9 +138,9 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 			// first we fill up the PriorityQueue
 			if (i < n) {
 				simUsers.add(new SimilarUser(ratingList.get(0).getUserId(), 
-						findSimilarity(userRatingList, sparseVectorFromRatingList(ratingList, size))));
+						findSimilarity(userRatingList, sparseVectorFromRatingList(ratingList, size + 1))));
 			} else { 
-				double currentSim = findSimilarity(userRatingList, sparseVectorFromRatingList(ratingList, size));
+				double currentSim = findSimilarity(userRatingList, sparseVectorFromRatingList(ratingList, size + 1));
 				if (currentSim > simUsers.peek().similarity) {
 					// add this user and drop current least similar user
 					simUsers.poll();

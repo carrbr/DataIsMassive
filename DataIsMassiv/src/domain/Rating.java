@@ -1,6 +1,12 @@
 package domain;
 
-public class Rating {
+import java.io.Serializable;
+
+public class Rating implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7048206610096512307L;
 	final private int userId;
 	final private int movieId;
 	final private int dateId;

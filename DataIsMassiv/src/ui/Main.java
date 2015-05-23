@@ -37,6 +37,14 @@ public class Main {
 		// test model/NN2 data/A_test data/A_test_result
 		// rmse data/A_test data/A_test_result
 		// trainNN model/NN3_1 model/NN3_2 data/training.txt 21000000
+		
+		// createUCF model/UCF data/A_train 5
+		// test model/NN data/A_test data/A_test_result
+		// rmse data/A_test data/A_test_result
+		// trainNN model/NN model/NN2 data/A_test 500000
+		// test model/NN2 data/A_test data/A_test_result
+		// rmse data/A_test data/A_test_result
+		// trainNN model/NN3_1 model/NN3_2 data/training.txt 21000000
 
 	}
 
@@ -49,8 +57,8 @@ public class Main {
 
 	private static void interactiveMode() throws Exception {
 
-		System.out.println("Type '?' or 'help' to get help\n"
-				+ "Type 'quit' or 'q' to quit, who would have guessed?");
+		System.out.print("Type '?' or 'help' to get help\n"
+				+ "Type 'quit' or 'q' to quit, who would have guessed?\n~$ ");
 
 		try (Scanner scan = new Scanner(System.in)) {
 			while (true) {
@@ -58,6 +66,7 @@ public class Main {
 				if (args.length > 0 && args[0].toLowerCase().matches("quit|q"))
 					break;
 				new MainTaskDelegation(args).exec();
+				System.out.print("~$ ");
 			}
 		}
 	}

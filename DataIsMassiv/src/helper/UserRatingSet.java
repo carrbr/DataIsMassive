@@ -1,5 +1,6 @@
 package helper;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -16,7 +17,11 @@ import domain.Rating;
  * time additions of user ratings, as well as to allow easy iteration through
  * all available user ratings
  */
-public class UserRatingSet implements Iterable<ArrayList<Rating>> {
+public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3370186565165421203L;
 	/*
 	 * The Integer key is the userID
 	 * 
@@ -24,10 +29,12 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>> {
 	 */
 	private Map<Integer, ArrayList<Rating>> ratings;
 	private int maxMovieId;
+	private int maxUserId;
 	
 	public UserRatingSet() {
 		ratings = new Hashtable<Integer, ArrayList<Rating>>();
 		maxMovieId = 0;
+		maxUserId = 0;
 	}
 	
 	public void addUserRating(Rating r) {
@@ -40,9 +47,13 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>> {
 			ratings.put(r.getUserId(), userRatingVector);
 		}
 		
-		// book keeping for movie IDs
+		// book keeping for IDs
 		if (r.getMovieId() > this.maxMovieId) {
 			this.maxMovieId = r.getMovieId();
+		}
+		
+		if (r.getUserId() > this.maxUserId) {
+			this.maxUserId = r.getUserId();
 		}
 	}
 
@@ -129,5 +140,9 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>> {
 	
 	public int getMaxMovieId() {
 		return maxMovieId;
+	}
+	
+	public int getMaxUserId() {
+		return maxUserId;
 	}
 }
