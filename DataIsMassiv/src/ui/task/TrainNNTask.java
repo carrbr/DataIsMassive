@@ -38,16 +38,15 @@ public class TrainNNTask extends TaskCommand {
 
 	private void setUPLearningCard() {
 		howToLearn = new LearningCardNN();
-		howToLearn.etaNN = .4;
-		howToLearn.etaMovie = .5;
-		howToLearn.etaUser = .5;
+		howToLearn.etaNN = .2;
+		howToLearn.etaMovie = 0.01;
+		howToLearn.etaUser = 0.01;
 
 		howToLearn.resetMovie = false;
 		howToLearn.resetUser = false;
 
-		howToLearn.resetRateMovie = .005;
-		howToLearn.resetRateUser = .007;
-
+		howToLearn.resetRateMovie = 0;
+		howToLearn.resetRateUser = 0;
 	}
 
 	@Override

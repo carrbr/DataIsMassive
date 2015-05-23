@@ -36,6 +36,7 @@ public class Main {
 		// trainNN model/NN model/NN2 data/A_test 500000
 		// test model/NN2 data/A_test data/A_test_result
 		// rmse data/A_test data/A_test_result
+		// trainNN model/NN3_1 model/NN3_2 data/training.txt 21000000
 
 	}
 

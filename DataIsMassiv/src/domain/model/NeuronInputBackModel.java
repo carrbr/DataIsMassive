@@ -108,7 +108,16 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 			movies.remove(movieId);
 			rwlMovies.writeLock().unlock();
 		}
+		
 		if (card.fakeInput > random.nextDouble()) {
+			rwlMovies.readLock().lock();
+			boolean exits = !movies.containsKey(movieId);
+			rwlMovies.readLock().unlock();
+			if(exits){
+				rwlMovies.writeLock().lock();
+				movies.put(movieId, MatrixUtils.createRealVector(newMovieVec));
+				rwlMovies.writeLock().unlock();
+			}
 			return MatrixUtils.createRealVector(newMovieVec);
 		}
 		return getMovieVector(movieId);
@@ -122,6 +131,14 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 			rwlUser.writeLock().unlock();
 		}
 		if (card.fakeInput > random.nextDouble()) {
+			rwlUser.readLock().lock();
+			boolean exits = !user.containsKey(userId);
+			rwlUser.readLock().unlock();
+			if(exits){
+				rwlUser.writeLock().lock();
+				movies.put(userId, MatrixUtils.createRealVector(newUserVec));
+				rwlUser.writeLock().unlock();
+			}
 			return MatrixUtils.createRealVector(newUserVec);
 		}
 		return getUserVector(userId);
@@ -302,14 +319,15 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 			user.clear();
 
 		int nThreads = 4;
-
+		int nGradientGroup = 7;
+		
 		Semaphore barrierLearner = new Semaphore(0);
 		Semaphore updateWriteBlock = new Semaphore(0);
 
 		ArrayList<LearningThread> threads = new ArrayList<>();
-
+		
 		for (int i = 0; i < nThreads; i++) {
-			threads.add(new LearningThread(10, barrierLearner,
+			threads.add(new LearningThread(nGradientGroup, barrierLearner,
 					updateWriteBlock, howToLearn, trainSet));
 		}
 		for (LearningThread t : threads) {
@@ -329,7 +347,7 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 				response.avgSumFactor(nThreads);
 				nn.writeLayerUpdate(response, howToLearn);
 
-				totalDoneLearnCycles += 10 * nThreads;
+				totalDoneLearnCycles += nGradientGroup * nThreads;
 
 				double secondsSinceStart = (System.currentTimeMillis() - timeStart) / 1000.0;
 				double timeSinceLastUpdate = System.currentTimeMillis()
