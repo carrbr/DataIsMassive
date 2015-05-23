@@ -76,9 +76,12 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 				endTask = System.currentTimeMillis();
 				System.out.println("Processed " + processedCount + " users. " + (endTask - startTask) / 1000 + "s elapsed");
 			}
+			
 			userRatingList = trainIt.next();
 			simUsers = findNSimilarUsers(numSimilarUsers, this.trainSet, userRatingList, numMovies);
 			this.similarUsers.add(userRatingList.get(0).getUserId(), simUsers);
+			
+			processedCount++;
 		}
 		endTask = System.currentTimeMillis();
 		System.out.println("Similar users found  in " + (endTask - startTask) / 1000 + "s\n");
