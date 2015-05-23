@@ -10,22 +10,20 @@ import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
+import no.uib.cipr.matrix.Vector.Norm;
 import no.uib.cipr.matrix.sparse.SparseVector;
 import domain.Rating;
 
 public class CollaborativeFilteringModel extends AbstractRatingModel {
 	private static final long serialVersionUID = 8557616341507027600L;
 	private String trainingSetFile;
-	private String testSetFile;
 	private UserRatingSet trainSet;
-	private UserRatingSet testSet;
 	private int numSimilarUsers;
-	private Queue<SimilarUser>[] similarUsers; // array of groups of n users similar to user at index
+	private ArrayList<Queue<SimilarUser>> similarUsers;  // array of groups of n users similar to user at index
 
-	public CollaborativeFilteringModel(String trainingSetFile, String testSetFile, int n) {
+	public CollaborativeFilteringModel(String trainingSetFile, int n) {
 		super();
 		this.trainingSetFile = trainingSetFile;
-		this.testSetFile = testSetFile;
 		this.numSimilarUsers = n;
 		
 		// may want to put this elsewhere later, but for now we will incur cost
@@ -35,16 +33,17 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	
 	@Override
 	public Rating predict(Rating r) {
-
-		return r.reRate(5); // TODO: fix this...obviously
+		Rating result = r.reRate((float)generateRatingFromSimilar(similarUsers.get(r.getUserId()), trainSet, r.getMovieId()));
+		similarUsers = new ArrayList<Queue<SimilarUser>>();
+		return result;
 	}
-	
+		
 	private void buildModel() {
 		trainSet = buildRatingSet(this.trainingSetFile);
-		testSet = buildTestRatingSet(this.testSetFile, trainSet); // TODO don't thing we actually need this
+
 		trainSet.subtractRowMeansFromEachRating();
 		
-		int numMovies = 0; // TODO get this value from somewhere!
+		int numMovies = trainSet.getMaxMovieId(); // Note: this will work in most cases, but it really is just a heuristic.  If we have problems this will need to change
 		
 		// we need to find our similar users for each user in the test set
 		Iterator<ArrayList<Rating>> trainIt = trainSet.iterator();
@@ -53,28 +52,8 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 		while (trainIt.hasNext()) {
 			userRatingList = trainIt.next();
 			simUsers = findNSimilarUsers(numSimilarUsers, trainSet, sparseVectorFromRatingList(userRatingList, numMovies), numMovies);
-			similarUsers[userRatingList.get(0).getUserId()] = simUsers;
+			similarUsers.add(userRatingList.get(0).getUserId(), simUsers);
 		}
-	}
-	
-	/**
-	 * 
-	 * @param fname
-	 * this is the filename for the test set data
-	 * @param tset
-	 * this should be a UserRatingSet containing the corresponding training set data
-	 * @return
-	 * This function will return a UserRatingSet containing the test set data (which doesn't
-	 * contain movie rating values), merged with the training set data
-	 */
-	private UserRatingSet buildTestRatingSet(String fname, UserRatingSet tset) {		
-		// build up the basic data structure
-		UserRatingSet urs = buildRatingSet(fname);
-		
-		// fill in all the missing movie rating data for each user in test set using training set
-		urs.merge(tset);
-		
-		return urs;
 	}
 	
 	private UserRatingSet buildRatingSet(String fName) {
@@ -112,14 +91,35 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 		return urs;
 	}
 	
+	/**
+	 * This method generates a rating using those of the elements of the similarSet to make the prediciton
+	 * This implementation computes a simple average.
+	 * @param similarSet
+	 * @param movieId
+	 * @return
+	 */
+	public double generateRatingFromSimilar(Queue<SimilarUser> similarSet, UserRatingSet urs, int movieId) {
+		double result = 0;
+		int count = similarSet.size();
+		
+		SimilarUser simUser = null;
+		while (!similarSet.isEmpty()) {
+			simUser = similarSet.remove();
+			result += urs.getRatingValue(simUser.id, movieId);
+		}
+		
+		return result / count;
+	}
+
+	
 	/*
 	 * nested class for storing userIds and their similarity to the queried user together 
 	 */
 	private class SimilarUser implements Comparable<SimilarUser> {
 		public int id;
-		public float similarity;
+		public double similarity;
 		
-		public SimilarUser(int id, float similarity) {
+		public SimilarUser(int id, double similarity) {
 			this.id = id;
 			this.similarity = similarity;
 		}
@@ -150,7 +150,7 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 				simUsers.add(new SimilarUser(ratingList.get(0).getUserId(), 
 						findSimilarity(userRatingList, sparseVectorFromRatingList(ratingList, size))));
 			} else { 
-				float currentSim = findSimilarity(userRatingList, sparseVectorFromRatingList(ratingList, size));
+				double currentSim = findSimilarity(userRatingList, sparseVectorFromRatingList(ratingList, size));
 				if (currentSim > simUsers.peek().similarity) {
 					// add this user and drop current least similar user
 					simUsers.poll();
@@ -176,8 +176,18 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 		return new SparseVector(size, indexes, ratings);
 	}
 	
-	private float findSimilarity(SparseVector u, SparseVector v) {
-		// TODO this is only a stub
-		return (float) 0.0;
+	/**
+	 * This method computes a similarity value between two vectors.  This particular implementation
+	 * uses the cosine similarity, cos(u, v) = (u * v)/(||u|| * ||v||)
+	 * 
+	 * @param u user rating vector
+	 * @param v second user rating vector to compute similarity to
+	 * @return value for the similarity
+	 */
+	private double findSimilarity(SparseVector u, SparseVector v) {
+		double dotProdUV = u.dot(v);
+		double frobeniusNormU = u.norm(Norm.TwoRobust);
+		double frobeniusNormV = v.norm(Norm.TwoRobust);
+		return dotProdUV / (frobeniusNormU * frobeniusNormV);
 	}
 }

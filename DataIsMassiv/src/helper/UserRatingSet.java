@@ -23,9 +23,11 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>> {
 	 * The ArrayList of Ratings contains all ratings for that user
 	 */
 	private Map<Integer, ArrayList<Rating>> ratings;
+	private int maxMovieId;
 	
 	public UserRatingSet() {
 		ratings = new Hashtable<Integer, ArrayList<Rating>>();
+		maxMovieId = 0;
 	}
 	
 	public void addUserRating(Rating r) {
@@ -36,6 +38,11 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>> {
 			ArrayList<Rating> userRatingVector = new ArrayList<Rating>();
 			userRatingVector.add(r);
 			ratings.put(r.getUserId(), userRatingVector);
+		}
+		
+		// book keeping for movie IDs
+		if (r.getMovieId() > this.maxMovieId) {
+			this.maxMovieId = r.getMovieId();
 		}
 	}
 
@@ -74,8 +81,16 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>> {
 	 * @param urs
 	 * UserRatingSet to be merged with <code>this</code>
 	 */
-	public void merge(UserRatingSet urs) {
-		// TODO implement this stub
+	public float getRatingValue(int userId, int movieId) {
+		ArrayList<Rating> ratingList = ratings.get(userId);
+		// find the correct rating
+		for (Rating rating: ratingList) {
+			if (rating.getMovieId() == movieId) {
+				return rating.getRating();
+			}
+		}
+		// user didn't rate this movie
+		return 0; // questionable decision, may have to change this later
 	}
 	
 	/**
@@ -110,5 +125,9 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>> {
 			return entryIt.next().getValue();
 		}
 		
+	}
+	
+	public int getMaxMovieId() {
+		return maxMovieId;
 	}
 }
