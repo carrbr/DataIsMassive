@@ -5,7 +5,6 @@ import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 
 import domain.model.CollaborativeFilteringModel;
-import domain.model.NeuronInputBackModel;
 
 public class CreateUserCollaborativeFilteringTask extends TaskCommand {
 

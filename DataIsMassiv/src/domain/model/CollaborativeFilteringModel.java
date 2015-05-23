@@ -7,7 +7,6 @@ import helper.UserRatingSet;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -40,27 +39,45 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	}
 		
 	private void buildModel() {
-		System.out.println("Building Model...");
+		long start = System.currentTimeMillis();
+		long endTask = 0;
+		long startTask = 0;
+	
+		System.out.println("Building Model...\n");
+		System.out.println("Building Rating Set...");
+		startTask = System.currentTimeMillis();
 		this.trainSet = buildRatingSet(this.trainingSetFile);
-		System.out.println("Rating Set Built");
+		endTask = System.currentTimeMillis();
+		System.out.println("Rating Set Built in " + (endTask - startTask) / 1000 + "s\n");
 
+		System.out.println("Normalizing Rating Set...");
+		startTask = System.currentTimeMillis();
 		this.trainSet.subtractRowMeansFromEachRating();
-		System.out.println("Rating Set Normalized");
+		endTask = System.currentTimeMillis();
+		System.out.println("Rating Set Normalized in " + (endTask - startTask) / 1000 + "s\n");
 		
 		int numMovies = trainSet.getMaxMovieId(); // Note: this will work in most cases, but it really is just a heuristic.  If we have problems this will need to change
 		
 		System.out.println("Finding Similar Users...");
+		startTask = System.currentTimeMillis();
 		this.similarUsers = initSimUserArrayList(trainSet.getMaxUserId() + 1);
 		// we need to find our similar users for each user in the test set
 		Iterator<ArrayList<Rating>> trainIt = trainSet.iterator();
 		ArrayList<Rating> userRatingList = null;
 		Queue<SimilarUser> simUsers = null;
+		int processedCount = 0;
 		while (trainIt.hasNext()) {
+			if (processedCount % 10 == 0) {
+				endTask = System.currentTimeMillis();
+				System.out.println("Processed " + processedCount + " users. " + (endTask - startTask) / 1000 + "s elapsed");
+			}
 			userRatingList = trainIt.next();
 			simUsers = findNSimilarUsers(numSimilarUsers, this.trainSet, sparseVectorFromRatingList(userRatingList, numMovies + 1), numMovies);
 			this.similarUsers.add(userRatingList.get(0).getUserId(), simUsers);
 		}
-		System.out.println("Model Built");
+		endTask = System.currentTimeMillis();
+		System.out.println("Similar users found  in " + (endTask - startTask) / 1000 + "s\n");
+		System.out.println("Model Built in " + (endTask - start) / 1000 + "s");
 	}
 	
 	private ArrayList<Queue<SimilarUser>> initSimUserArrayList(int size) {
