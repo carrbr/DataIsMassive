@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import be.tarsos.lsh.Vector;
 import domain.Rating;
 
 /**
@@ -28,13 +29,13 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable 
 	 * The ArrayList of Ratings contains all ratings for that user
 	 */
 	private Map<Integer, ArrayList<Rating>> ratings;
-	private Map<Integer, ArrayList<Rating>> ratingsNormed;
+//	private Map<Integer, ArrayList<Rating>> ratingsNormed;
 	private int maxMovieId;
 	private int maxUserId;
 	
 	public UserRatingSet() {
 		ratings = new Hashtable<Integer, ArrayList<Rating>>();
-		ratingsNormed = new Hashtable<Integer, ArrayList<Rating>>();
+//		ratingsNormed = new Hashtable<Integer, ArrayList<Rating>>();
 		maxMovieId = 0;
 		maxUserId = 0;
 	}
@@ -59,6 +60,7 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable 
 		}
 	}
 
+	/*
 	public void subtractRowMeansFromEachRating() {
 		Set<Map.Entry<Integer, ArrayList<Rating>>> entries = ratings.entrySet();
 		Iterator<Map.Entry<Integer, ArrayList<Rating>>> entryIt = entries.iterator();
@@ -87,6 +89,39 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable 
 			// place normed vector into normed data structure
 			ratingsNormed.put(userVectorPrime.get(0).getUserId(), userVectorPrime);
 		}
+	}*/
+	
+	public Vector getUserRatingsAsNormedVector(int userId) {
+		Vector ratingVec = new Vector(maxMovieId); // vector should have same dimensionality as the number of movies
+		
+		if (!ratings.containsKey(userId)) {
+			Vector vec = new Vector(maxMovieId);
+			vec.setKey(Integer.toString(userId));
+			return vec;
+		}
+		
+		// compute average
+		float avg = (float) 0.0;
+		for (Rating rate: ratings.get(userId)) {
+			
+			avg += rate.getRating();
+		}
+		avg /= ratings.get(userId).size();
+		
+		Rating r = ratings.get(userId).get(0);
+		for (int i = 0; i < maxMovieId; i++) {
+			if (maxMovieId == r.getMovieId()) { // it is now this ratings index
+				ratingVec.set(i, r.getRating() - avg);
+				if (i + 1 < maxMovieId) {
+					r = ratings.get(userId).get(i + 1); // prepare next rating
+				}
+			} else { // empty element in sparse rating data -- fill it in
+				ratingVec.set(i, 0.0);
+			}
+		}
+		ratingVec.setKey(Integer.toString(r.getUserId()));
+		
+		return ratingVec;
 	}
 	
 	/**
@@ -126,7 +161,7 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable 
 		Iterator<Map.Entry<Integer, ArrayList<Rating>>> entryIt = null;
 		
 		public UserRatingSetIterator() {
-			entries = ratingsNormed.entrySet();
+			entries = ratings.entrySet();
 			entryIt = entries.iterator();
 		}
 		
