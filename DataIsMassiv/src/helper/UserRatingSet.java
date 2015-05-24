@@ -28,13 +28,11 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable 
 	 * The ArrayList of Ratings contains all ratings for that user
 	 */
 	private Map<Integer, ArrayList<Rating>> ratings;
-	private Map<Integer, ArrayList<Rating>> ratingsNormed;
 	private int maxMovieId;
 	private int maxUserId;
 	
 	public UserRatingSet() {
 		ratings = new Hashtable<Integer, ArrayList<Rating>>();
-		ratingsNormed = new Hashtable<Integer, ArrayList<Rating>>();
 		maxMovieId = 0;
 		maxUserId = 0;
 	}
@@ -84,8 +82,8 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable 
 				userVectorPrime.add(i, userVector.get(i).reRate(userVector.get(i).getRating() - avg));
 			}
 			
-			// place normed vector into normed data structure
-			ratingsNormed.put(userVectorPrime.get(0).getUserId(), userVectorPrime);
+			// swap out for new array list
+			entry.setValue(userVectorPrime);
 		}
 	}
 	
@@ -112,9 +110,6 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable 
 	 * If you modify anything through this iterator it will probably eat your soul.
 	 * 
 	 * AND YOU WILL DESERVE IT.
-	 * 
-	 * Also, note that this will iterate through the lists of normed vectors, not 
-	 * the actual valued vectors.
 	 */
 	@Override
 	public Iterator<ArrayList<Rating>> iterator() {
@@ -126,7 +121,7 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable 
 		Iterator<Map.Entry<Integer, ArrayList<Rating>>> entryIt = null;
 		
 		public UserRatingSetIterator() {
-			entries = ratingsNormed.entrySet();
+			entries = ratings.entrySet();
 			entryIt = entries.iterator();
 		}
 		
