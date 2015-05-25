@@ -59,7 +59,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			failCount++;
 			if (simElems == null) failCountNulls++;
 			System.out.println("num without similar elems = " + failCount + ", num null = " + failCountNulls);
-			return r.reRate((float) trainSet.getMeanForFilterById(filterById));
+			return r.reRate((float) 3.0); // we don't have this user in our data so the best we can do is guess in the middle
 		} else {
 			Rating result = r.reRate((float)generateRatingFromSimilar(simElems, trainSet,
 					filterById, trainSet.getFeatureIdFromRating(r)));
