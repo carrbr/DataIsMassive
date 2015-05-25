@@ -1,5 +1,6 @@
 package domain.model;
 
+import helper.SimilarUser;
 import helper.TextToRatingReader;
 import helper.UserRatingSet;
 
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
+import be.tarsos.lsh.Index;
 import be.tarsos.lsh.LSH;
 import be.tarsos.lsh.Vector;
 import be.tarsos.lsh.families.CosineHashFamily;
@@ -24,7 +26,7 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	private String trainingSetFile;
 	private UserRatingSet trainSet;
 	private int numSimilarUsers;
-	private ArrayList<List<Integer>> similarUsers;  // array of groups of n users similar to user at index
+	private ArrayList<Queue<SimilarUser>> similarUsers;  // array of groups of n users similar to user at index
 
 	public CollaborativeFilteringModel(String trainingSetFile, int n) {
 		super();
@@ -38,13 +40,57 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	
 	@Override
 	public Rating predict(Rating r) {
-		List<Integer> simUsers = similarUsers.get(r.getUserId());
+		Queue<SimilarUser> simUsers = similarUsers.get(r.getUserId());
 		if (simUsers == null) {
 			return r.reRate((float) 3.0);
 		} else {
 			Rating result = r.reRate((float)generateRatingFromSimilar(simUsers, trainSet, r.getMovieId()));
 			return result;
 		}
+	}
+	
+	/**
+	 * This method generates a rating using those of the elements of the similarSet to make the prediciton
+	 * This implementation computes a simple average.
+	 * @param similarSet
+	 * @param movieId
+	 * @return
+	 */
+	public double generateRatingFromSimilar(Queue<SimilarUser> similarSet, UserRatingSet urs, int movieId) {
+		double result = 0;
+		int count = 0;
+		double minSim = 0.01;
+		
+		/*
+		 * TODO look into our choice of 3.0 for empty ratings
+		 * 
+		 * also consider weighting by similarity (and an investigation of the similar users we select
+		 * is probably in order too)
+		 */
+		double simTotal = 0;
+		for (SimilarUser simUser: similarSet) {
+			if (urs.getRatingValue(simUser.id, movieId) != 0  && simUser.similarity >= minSim) { // only count if it's a rating value worth using
+				simTotal += simUser.similarity; 
+			}
+		}
+		
+		if (simTotal > 0) { // only rate if similar elements actually have something in common
+			for (SimilarUser simUser: similarSet) {
+				double ratingValue = urs.getRatingValue(simUser.id, movieId);
+				if (ratingValue != 0 && simUser.similarity >= minSim) { // only for users who have rated this
+					result += ratingValue * (simUser.similarity / simTotal); // weight based on similarity
+					System.out.println("\tratingValue = " + ratingValue + ", weight = " + (simUser.similarity / simTotal) + ", similarity = " + simUser.similarity);
+					count++;
+				}
+			}
+		} 
+		
+		if (count == 0) { // no ratings qualified.  guess in the middle
+			result = 3.0;
+		}
+		System.out.println("result = " + result + ", simTotal = " + simTotal);
+		
+		return result;
 	}
 		
 	private void buildModel() {
@@ -59,47 +105,49 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 		endTask = System.currentTimeMillis();
 		System.out.println("Rating Set Built in " + (endTask - startTask) / 1000 + "s\n");
 
-		System.out.println("Normalizing Rating Set...");
+		/*System.out.println("Normalizing Rating Set...");
 		startTask = System.currentTimeMillis();
 		//this.trainSet.subtractRowMeansFromEachRating();
 		endTask = System.currentTimeMillis();
-		System.out.println("Rating Set Normalized in " + (endTask - startTask) / 1000 + "s\n");
+		System.out.println("Rating Set Normalized in " + (endTask - startTask) / 1000 + "s\n");*/
 		
-		int numMovies = trainSet.getMaxMovieId(); // Note: this will work in most cases, but it really is just a heuristic.  If we have problems this will need to change
+		int numMovies = trainSet.getMaxMovieId() + 1; // Note: this will work in most cases, but it really is just a heuristic.  If we have problems this will need to change
+		int numUsers = trainSet.getMaxUserId() + 1;
 		
 		System.out.println("Finding Similar Users...");
 		startTask = System.currentTimeMillis();
-		this.similarUsers = initSimUserArrayList(trainSet.getMaxUserId() + 1);
+		this.similarUsers = initSimUserArrayList(numUsers);
 		
 		// build LSH table for finding similar users
 		System.out.println("Building LSH Table...");
 		startTask = System.currentTimeMillis();
-		LSH lshTable = buildLSHTable(trainSet.getMaxUserId(), trainSet.getMaxMovieId());
-		lshTable.buildIndex(10, 4); // TODO tune these params?
+		LSH lshTable = buildLSHTable(numUsers, numMovies);
+		endTask = System.currentTimeMillis();
 		System.out.println("LSH Table built in " + (endTask - startTask) / 1000 + "s\n");
 
 		
 		// we need to find our similar users for each user in the test set
-
 		System.out.println("Finding Similar Users...");
 		startTask = System.currentTimeMillis();
 		Vector userRatingVec = null;
-		List<Vector> simUsersVectors = new ArrayList<Vector>();
-		List<Integer> simUsers = new ArrayList<Integer>();
+		List<String> simUserCandidates = new ArrayList<String>();
+		Queue<SimilarUser> simUsers = null;
 		int processedCount = 0;
-		for (int i = 0; i < trainSet.getMaxUserId(); i++) {
+		for (int i = 0; i < numUsers; i++) {
 			if (processedCount % 1000 == 0) {
 				endTask = System.currentTimeMillis();
 				System.out.println("Processed " + processedCount + " users. " + (endTask - startTask) / 1000 + "s elapsed");
 			}
-			
-			userRatingVec = trainSet.getUserRatingsAsNormedVector(i);
-			simUsersVectors = lshTable.query(userRatingVec, numSimilarUsers);
-			for (Vector vec: simUsersVectors) {
-				
-			}
-			this.similarUsers.add(Integer.parseInt(userRatingVec.getKey()), simUsers);
 			processedCount++;
+			
+			userRatingVec = trainSet.getUserRatingsAsNormedVector(i); // vector to use as query
+			if (userRatingVec == null) { // not in dataset, skip
+				continue;
+			}
+			simUserCandidates = lshTable.query(userRatingVec, numSimilarUsers);
+			// evaluate the candidates to find the best N
+			simUsers = findNSimilarUsers(numSimilarUsers, trainSet, i, simUserCandidates, numMovies);
+			this.similarUsers.add(Integer.parseInt(userRatingVec.getKey()), simUsers);
 		}
 		endTask = System.currentTimeMillis();
 		System.out.println("Similar users found  in " + (endTask - startTask) / 1000 + "s\n");
@@ -107,20 +155,24 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	}
 	
 	private LSH buildLSHTable(int numVecs, int dimensions) {
-		ArrayList<Vector> dataset = new ArrayList<Vector>();
-		
+		HashFamily hf = new CosineHashFamily(dimensions);
+		Index index = Index.deserialize(hf, 10, 10);
 		for (int i = 0; i < numVecs; i++) {
-			if (i % 50 == 0) {
-				System.out.println("Processed " + i + " in LSH");
+			if (i % 10000 == 0) {
+				System.out.println("Added " + i + " users to LSH index");
 			}
-			dataset.add(trainSet.getUserRatingsAsNormedVector(i));
+			Vector v = trainSet.getUserRatingsAsNormedVector(i);
+			if (v == null) { // not in dataset, skip
+				continue;
+			}
+			index.index(v);
 		}
 		
-		return new LSH(dataset, new CosineHashFamily(dimensions));
+		return new LSH(index, hf);
 	}
 	
-	private ArrayList<List<Integer>> initSimUserArrayList(int size) {
-		ArrayList<List<Integer>> arrList = new ArrayList<List<Integer>>(size);
+	private ArrayList<Queue<SimilarUser>> initSimUserArrayList(int size) {
+		ArrayList<Queue<SimilarUser>> arrList = new ArrayList<Queue<SimilarUser>>(size);
 		for(; size > 0; size --) {
 			arrList.add(null);
 		}
@@ -161,42 +213,6 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 		
 		return urs;
 	}
-	
-	/**
-	 * This method generates a rating using those of the elements of the similarSet to make the prediciton
-	 * This implementation computes a simple average.
-	 * @param similarSet
-	 * @param movieId
-	 * @return
-	 */
-	public double generateRatingFromSimilar(List<Integer> similarSet, UserRatingSet urs, int movieId) {
-		double result = 0;
-		int count = 0;		
-		
-		/*
-		 * TODO look into our choice of 3.0 for empty ratings
-		 * 
-		 * also consider weighting by similarity (and an investigation of the similar users we select
-		 * is probably in order too)
-		 */
-		
-		
-		for (int userId: similarSet) {
-			double ratingValue = urs.getRatingValue(userId, movieId);
-			if (ratingValue != 0) { // skip similar users who have not rated this
-				result += ratingValue;
-				count++;
-				System.out.print(ratingValue + " ");
-			}
-		}
-		if (count == 0) {
-			result = 3.0;
-		} else {
-			result /= count;
-		}
-		System.out.println("avg = " + result + "/" + count + " = " + result / count);
-		return result;
-	}
 		
 	/*
 	 * TODO
@@ -206,28 +222,32 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	 *  Make sure we're getting normed vectors from urs here and elsewhere in the file
 	 */
 	
-	private Queue<Integer> findNSimilarUsers(int n, UserRatingSet urs, ArrayList<Rating> userRatingList, int size) {
-		Queue<Integer> simUsers = new PriorityQueue<Integer>();
-		Iterator<ArrayList<Rating>> ursIt = urs.iterator();
+	private Queue<SimilarUser> findNSimilarUsers(int n, UserRatingSet urs, int queryUserId, List<String> candidates, int size) {
+		ArrayList<Rating> userRatingList = urs.getUserRatings(queryUserId);
 		ArrayList<Rating> normedUserRatingList = normVector(userRatingList);
+		Queue<SimilarUser> simUsers = new PriorityQueue<SimilarUser>();
 		
 		// note, this assumes the number of ratings > numSimilarUsers
 		int i = 0;
 		ArrayList<Rating> ratingList = null;
-		while (ursIt.hasNext()) {
-			ratingList = ursIt.next();
+		for (String candidate: candidates) {
+			int candidateId = Integer.parseInt(candidate);
+			ratingList = urs.getUserRatings(candidateId);
+			if (ratingList == null) {
+				continue; // no user by this id in dataset
+			}
 			if (userRatingList.get(0).getUserId() != ratingList.get(0).getUserId()) { // ensure we don't count self as similar user
 				// first we fill up the PriorityQueue
 				if (i < n) {
-					//simUsers.add(new SimilarUser(ratingList.get(0).getUserId(), 
-					//		findSimilarity(sparseVectorFromRatingList(normedUserRatingList, size + 1), sparseVectorFromRatingList(ratingList, size + 1))));
+					simUsers.add(new SimilarUser(ratingList.get(0).getUserId(), 
+							findSimilarity(sparseVectorFromRatingList(normedUserRatingList, size + 1), sparseVectorFromRatingList(ratingList, size + 1))));
 				} else { 
 					double currentSim = findSimilarity(sparseVectorFromRatingList(normedUserRatingList, size + 1), sparseVectorFromRatingList(ratingList, size + 1));
-					/*if (currentSim > simUsers.peek().similarity) {
+					if (currentSim > simUsers.peek().similarity) {
 						// add this user and drop current least similar user
 						simUsers.poll(); // TODO are we dropping the most similar user????
 						simUsers.add(new SimilarUser(ratingList.get(0).getUserId(), currentSim));
-					}*/
+					}
 				}
 			}
 			i++;
@@ -277,7 +297,10 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 		double dotProdUV = u.dot(v);
 		double frobeniusNormU = u.norm(Norm.TwoRobust);
 		double frobeniusNormV = v.norm(Norm.TwoRobust);
-		double sim = dotProdUV / (frobeniusNormU * frobeniusNormV);
+		double sim = 0.0;
+		if (frobeniusNormU != 0 && frobeniusNormV != 0) { // don't want to divide by zero
+			sim = dotProdUV / (frobeniusNormU * frobeniusNormV);
+		}
 		return sim;
 	}
 }

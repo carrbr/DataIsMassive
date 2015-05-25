@@ -38,6 +38,7 @@ public class Main {
 		// rmse data/A_test data/A_test_result
 		// trainNN model/NN3_1 model/NN3_2 data/training.txt 21000000
 		
+		// split data/training.txt data/U 11 usplit
 		// createUCF model/UCF.model data/A_train 5
 		// test model/UCF.model data/A_test data/A_test_result
 		// rmse data/A_test data/A_test_result

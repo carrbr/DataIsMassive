@@ -14,21 +14,28 @@ public class SplitDataTask extends TaskCommand {
 	private String fileIn;
 	private String fileOut;
 	private int numOfBuckets;
+	private boolean splitByUser;
 
-	public SplitDataTask(String fileIn, String fileOut, int numOfBuckets) {
+	public SplitDataTask(String fileIn, String fileOut, int numOfBuckets, boolean splitByUser) {
 		this.fileIn = fileIn;
 		this.fileOut = fileOut;
 		this.numOfBuckets = numOfBuckets;
+		this.splitByUser = splitByUser;
 
 	}
 
 	public SplitDataTask(String[] args) {
 		super(args);
 
-		if (!needsHelp && args.length == 3) {
+		if (!needsHelp && args.length >= 3) {
 			this.fileIn = args[0];
 			this.fileOut = args[1];
 			this.numOfBuckets = Integer.valueOf(args[2]);
+			if (args.length >= 4 && args[3].equals("usplit")) {
+				this.splitByUser = true;
+			} else {
+				this.splitByUser = false;
+			}
 		}
 	}
 
@@ -47,8 +54,11 @@ public class SplitDataTask extends TaskCommand {
 			writerTest = new BufferedWriter(new FileWriter(new File(fileOut
 					+ "_test")));
 
-			divide(ratingsIn, writerTraining, writerTest, numOfBuckets);
-
+			if (this.splitByUser) {
+				divideByUser(ratingsIn, writerTraining, writerTest, numOfBuckets);
+			} else {
+				divide(ratingsIn, writerTraining, writerTest, numOfBuckets);
+			}
 		} finally {
 			if (ratingsIn != null)
 				ratingsIn.close();
@@ -76,4 +86,22 @@ public class SplitDataTask extends TaskCommand {
 		}
 
 	}
+
+	private void divideByUser(TextToRatingReader ratingsIn,
+			BufferedWriter writerTraining, BufferedWriter writerTest,
+			int numOfBuckets) throws IOException {
+
+		Rating r = null;
+		while ((r = ratingsIn.readNext()) != null) {
+			int h = r.getUserId();
+			h %= numOfBuckets;
+			if (h == 0) {
+				writerTest.write(r + "\n");
+			} else {
+				writerTraining.write(r + "\n");
+			}
+		}
+
+	}
+
 }

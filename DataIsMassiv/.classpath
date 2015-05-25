@@ -10,6 +10,6 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/DataIsMassiv/lib/math/commons-math3-3.4.1-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="libs/TarsosLSH-latest.jar"/>
+	<classpathentry kind="lib" path="libs/TarsosLSH-0.7.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

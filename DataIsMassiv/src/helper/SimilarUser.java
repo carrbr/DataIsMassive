@@ -16,7 +16,7 @@ public class SimilarUser extends AbstractSimilarUser {
 		int result = 0;
 		if (this.similarity > user.similarity) {
 			result = 1;
-		} else if (this.similarity > user.similarity) {
+		} else if (this.similarity < user.similarity) {
 			result = -1;
 		}
 		return result;
