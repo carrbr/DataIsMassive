@@ -4,22 +4,22 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 
-import domain.model.UserCollaborativeFilteringModel;
+import domain.model.MovieCollaborativeFilteringModel;
 
-public class CreateUserCollaborativeFilteringTask extends TaskCommand {
+public class CreateMovieCollaborativeFilteringTask extends TaskCommand {
 
 	private String fileOut;
 	private String trainingFile;
-	private int numSimilarUsers;
+	private int numSimilarMovies;
 
-	public CreateUserCollaborativeFilteringTask(String[] args) {
+	public CreateMovieCollaborativeFilteringTask(String[] args) {
 		super(args);
 
 		if (!needsHelp && args.length == 3) {
 
 			this.fileOut = args[0];
 			this.trainingFile = args[1];
-			this.numSimilarUsers = Integer.parseInt(args[2]);
+			this.numSimilarMovies = Integer.parseInt(args[2]);
 		}
 	}
 
@@ -34,7 +34,7 @@ public class CreateUserCollaborativeFilteringTask extends TaskCommand {
 			oos = new ObjectOutputStream(
 					new FileOutputStream(new File(fileOut)));
 
-			oos.writeObject(new UserCollaborativeFilteringModel(this.trainingFile, this.numSimilarUsers));
+			oos.writeObject(new MovieCollaborativeFilteringModel(this.trainingFile, this.numSimilarMovies));
 
 		} finally {
 			if (oos != null)

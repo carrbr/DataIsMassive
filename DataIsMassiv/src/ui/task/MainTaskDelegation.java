@@ -31,6 +31,8 @@ public class MainTaskDelegation extends TaskCommand {
 			new TrainNNTask(reduced).exec();
 		} else if (match(args, "createUCF")) {
 			new CreateUserCollaborativeFilteringTask(reduced).exec();
+		} else if (match(args, "createMCF")) {
+				new CreateMovieCollaborativeFilteringTask(reduced).exec();
 		} else {
 			System.out.println("No matching command found");
 			writeHelp();

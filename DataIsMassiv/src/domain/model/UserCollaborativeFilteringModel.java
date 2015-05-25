@@ -1,12 +1,7 @@
 package domain.model;
 
 import helper.AbstractRatingSet;
-import helper.SimilarElement;
 import helper.UserRatingSet;
-
-import java.util.Queue;
-
-import domain.Rating;
 
 public class UserCollaborativeFilteringModel extends AbstractCollaborativeFilteringModel {
 	/**
@@ -16,18 +11,6 @@ public class UserCollaborativeFilteringModel extends AbstractCollaborativeFilter
 	
 	public UserCollaborativeFilteringModel(String trainingSetFile, int n) {
 		super(trainingSetFile, n);
-	}
-	
-	@Override
-	public Rating predict(Rating r) {
-		Queue<SimilarElement> simUsers = similarElements.get(r.getUserId());
-		if (simUsers == null) {
-			return r.reRate((float) 3.0);
-		} else {
-			Rating result = r.reRate((float)generateRatingFromSimilar(simUsers, trainSet, r.getUserId(), r.getMovieId()));
-			System.out.println("result = " + result.getRating() + " userId = " + r.getUserId());
-			return result;
-		}
 	}
 	
 	/*

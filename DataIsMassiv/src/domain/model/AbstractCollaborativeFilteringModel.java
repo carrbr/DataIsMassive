@@ -42,6 +42,19 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		buildModel();
 	}
 	
+	@Override
+	public Rating predict(Rating r) {
+		Queue<SimilarElement> simMovies = similarElements.get(r.getUserId());
+		if (simMovies == null) {
+			return r.reRate((float) 3.0);
+		} else {
+			Rating result = r.reRate((float)generateRatingFromSimilar(simMovies, trainSet,
+					trainSet.getFilterByIdFromRating(r), trainSet.getFeatureIdFromRating(r)));
+			System.out.println("result = " + result.getRating() + " userId = " + r.getUserId());
+			return result;
+		}
+	}
+	
 	
 	/**
 	 * This method generates a rating using those of the elements of the similarSet to make the prediction
