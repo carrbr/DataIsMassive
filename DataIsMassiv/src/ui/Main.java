@@ -40,8 +40,8 @@ public class Main {
 		
 		// split data/training.txt data/UCF 11
 		// createUCF model/UCF.model data/A_train 100
-		// test model/UCF.model data/A_test data/A_test_result
-		// rmse data/A_test data/A_test_result
+		// test model/UCF.model data/UCF_test data/UCF_test_result
+		// rmse data/UCF_test data/UCF_test_result
 		
 		// split data/training.txt data/M 11
 		// createMCF model/MCF.model data/M_train 100

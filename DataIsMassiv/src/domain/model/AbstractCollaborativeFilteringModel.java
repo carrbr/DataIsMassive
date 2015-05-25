@@ -63,7 +63,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		} else {
 			Rating result = r.reRate((float)generateRatingFromSimilar(simElems, trainSet,
 					filterById, trainSet.getFeatureIdFromRating(r)));
-			System.out.println("result = " + r);
+			System.out.println("result = " + result);
 			return result;
 		}
 	}
