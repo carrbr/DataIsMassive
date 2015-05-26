@@ -100,11 +100,7 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable 
 		}
 		
 		// compute average
-		float avg = (float) 0.0;
-		for (Rating rate: ratings.get(userId)) {
-			avg += rate.getRating();
-		}
-		avg /= ratings.get(userId).size();
+		double avg = this.calcUserMean(userId);
 		
 		Rating r = ratings.get(userId).get(0);
 		for (int i = 0; i <= maxMovieId; i++) {
@@ -189,5 +185,14 @@ public class UserRatingSet implements Iterable<ArrayList<Rating>>, Serializable 
 	
 	public int getMaxUserId() {
 		return maxUserId;
+	}
+
+	public double calcUserMean(int userId) {
+		double avg = 0.0;
+		for (Rating rate: ratings.get(userId)) {
+			avg += rate.getRating();
+		}
+		avg /= ratings.get(userId).size();
+		return avg;
 	}
 }

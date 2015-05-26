@@ -20,7 +20,7 @@ public class Main {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		
+
 		handleInput(args);
 
 		// split data/training.txt data/A 10

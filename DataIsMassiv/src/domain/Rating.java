@@ -83,6 +83,6 @@ public class Rating implements Serializable {
 	}
 
 	public double getNiceFormatRating() {
-		return (int)(rating*10)/(10.0);
+		return ((double)Math.round(rating * 10)) / 10;
 	}
 }

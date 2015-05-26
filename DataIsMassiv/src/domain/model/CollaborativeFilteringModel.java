@@ -7,8 +7,10 @@ import helper.UserRatingSet;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
@@ -27,6 +29,9 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	private UserRatingSet trainSet;
 	private int numSimilarUsers;
 	private ArrayList<Queue<SimilarUser>> similarUsers;  // array of groups of n users similar to user at index
+	private Map<Integer, Double> userMeans;
+	
+	private final double minSim = 0.05;
 
 	public CollaborativeFilteringModel(String trainingSetFile, int n) {
 		super();
@@ -40,11 +45,13 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	
 	@Override
 	public Rating predict(Rating r) {
+		this.userMeans = new HashMap<Integer, Double>(); // TODO move this
 		Queue<SimilarUser> simUsers = similarUsers.get(r.getUserId());
 		if (simUsers == null) {
 			return r.reRate((float) 3.0);
 		} else {
-			Rating result = r.reRate((float)generateRatingFromSimilar(simUsers, trainSet, r.getMovieId()));
+			Rating result = r.reRate((float)generateRatingFromSimilar(simUsers, trainSet, r.getMovieId(), r.getUserId()));
+			System.out.println("result = " + result.getRating() + " userId = " + r.getUserId());
 			return result;
 		}
 	}
@@ -56,17 +63,15 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	 * @param movieId
 	 * @return
 	 */
-	public double generateRatingFromSimilar(Queue<SimilarUser> similarSet, UserRatingSet urs, int movieId) {
+	public double generateRatingFromSimilar(Queue<SimilarUser> similarSet, UserRatingSet urs, int movieId, int userId) {
 		double result = 0;
 		int count = 0;
-		double minSim = 0.01;
-		
-		/*
-		 * TODO look into our choice of 3.0 for empty ratings
-		 * 
-		 * also consider weighting by similarity (and an investigation of the similar users we select
-		 * is probably in order too)
-		 */
+		int minCount = 5;
+		double hedgeWeight = minCount * 1.5 + 1;
+		double hedgeTotal = 2 * minCount;
+		double userAvg = -1;
+	
+		// will use this to weight by similarity scores
 		double simTotal = 0;
 		for (SimilarUser simUser: similarSet) {
 			if (urs.getRatingValue(simUser.id, movieId) != 0  && simUser.similarity >= minSim) { // only count if it's a rating value worth using
@@ -85,10 +90,30 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 			}
 		} 
 		
-		if (count == 0) { // no ratings qualified.  guess in the middle
-			result = 3.0;
+		// when we have few useful similar users, hedge our bets and bias towards the middle
+		if (count <= minCount && count > 0) {
+			if (this.userMeans.containsKey(userId)) { // avg has already been calculated
+				userAvg = userMeans.get(userId); 
+			} else { // avg needs to be calculated
+				userAvg = urs.calcUserMean(userId);
+				this.userMeans.put(userId, userAvg);
+			}
+			hedgeWeight -= count;
+			System.out.println("hedging... count = " + count + " prevResult = " + result + " resultWeight = " + ((hedgeTotal - hedgeWeight) / hedgeTotal)
+					+ " hedgeWeight = " + (hedgeWeight / hedgeTotal) + " avg = " + userAvg);
+			result = userAvg * (hedgeWeight / hedgeTotal) + result * ((hedgeTotal - hedgeWeight) / hedgeTotal);
 		}
-		//System.out.println("result = " + result + ", simTotal = " + simTotal);
+		
+		if (count == 0) { // no ratings qualified.  guess in the middle
+			if (this.userMeans.containsKey(userId)) { // avg has already been calculated
+				userAvg = userMeans.get(userId); 
+			} else { // avg needs to be calculated
+				userAvg = urs.calcUserMean(userId);
+				this.userMeans.put(userId, userAvg);
+			}
+			System.out.println("Halp, no common ground" + " using avg = " + userAvg);
+			result = userAvg;
+		}
 		
 		return result;
 	}
