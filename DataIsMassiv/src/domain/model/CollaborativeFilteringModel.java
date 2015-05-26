@@ -66,7 +66,7 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 	public double generateRatingFromSimilar(Queue<SimilarUser> similarSet, UserRatingSet urs, int movieId, int userId) {
 		double result = 0;
 		int count = 0;
-		int minCount = 5;
+		int minCount = 10;
 		double hedgeWeight = minCount * 1.5 + 1;
 		double hedgeTotal = 2 * minCount;
 		double userAvg = -1;
