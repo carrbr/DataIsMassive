@@ -27,6 +27,14 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	protected int numSimilarElems;
 	protected ArrayList<Queue<SimilarElement>> similarElements;  // array of groups of n users similar to user at index
 	
+	// TODO remove this later
+	private static int failCount;
+	private static int failCountNulls;
+	static {
+		failCount = 0;
+		failCountNulls = 0;
+	}
+	
 	/*
 	 * params for our model
 	 */
@@ -44,15 +52,17 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	
 	@Override
 	public Rating predict(Rating r) {
-		Queue<SimilarElement> simElems = similarElements.get(trainSet.getFilterByIdFromRating(r));
+		int filterById = trainSet.getFilterByIdFromRating(r);
+		
+		Queue<SimilarElement> simElems = similarElements.get(filterById);
 		if (simElems == null || simElems.size() == 0) {
-			System.out.print("Change this code! filterById = " + trainSet.getFilterByIdFromRating(r));
-			if (simElems != null) System.out.println("simElems.size() = " + simElems.size()); // TODO remove these prints
-			else System.out.println();
-			return r.reRate((float) 3.0);
+			failCount++;
+			if (simElems == null) failCountNulls++;
+			System.out.println("num without similar elems = " + failCount + ", num null = " + failCountNulls);
+			return r.reRate((float) trainSet.getMeanForFilterById(filterById));
 		} else {
 			Rating result = r.reRate((float)generateRatingFromSimilar(simElems, trainSet,
-					trainSet.getFilterByIdFromRating(r), trainSet.getFeatureIdFromRating(r)));
+					filterById, trainSet.getFeatureIdFromRating(r)));
 			System.out.println("result = " + r);
 			return result;
 		}
@@ -232,30 +242,30 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	
 	private Queue<SimilarElement> findNSimilarElems(int n, AbstractRatingSet rs, int queryFilterById, List<String> candidates, int numFeatureElems) {
 		ArrayList<Rating> filterByElemRatingList = rs.getFilterByElemRatings(queryFilterById);
-		ArrayList<Rating> normedFilterByElemRatingList = normVector(filterByElemRatingList);
+		ArrayList<Rating> normedFilterByElemRatingList = normList(filterByElemRatingList);
 		Queue<SimilarElement> simElems = new PriorityQueue<SimilarElement>();
 		
 		// note, this assumes the number of ratings > numSimilarElems
-		ArrayList<Rating> ratingList = null;
+		ArrayList<Rating> candidateRatingList = null;
+		int candidateId = -1;
 		for (String candidate: candidates) {
-			int candidateId = Integer.parseInt(candidate);
-			ratingList = rs.getFilterByElemRatings(candidateId);
-			if (ratingList == null) {
+			candidateId = Integer.parseInt(candidate);
+			candidateRatingList = normList(rs.getFilterByElemRatings(candidateId));
+			
+			if (candidateRatingList == null) {
 				continue; // no elem by this id in dataset
 			}
-			if (filterByElemRatingList.get(0).getUserId() != ratingList.get(0).getUserId()) { // ensure we don't count self as similar user
+			if (queryFilterById != candidateId) { // ensure we don't count self as similar user
 				double currentSim = findSimilarity(sparseVectorFromRatingList(normedFilterByElemRatingList, numFeatureElems),
-						sparseVectorFromRatingList(ratingList, numFeatureElems));
+						sparseVectorFromRatingList(candidateRatingList, numFeatureElems));
 				// first we fill up the PriorityQueue
 				if (simElems.size() < n && currentSim > this.minSim) {
-					simElems.add(new SimilarElement(rs.getFilterByIdFromRating(ratingList.get(0)), 
-							findSimilarity(sparseVectorFromRatingList(normedFilterByElemRatingList, numFeatureElems),
-										sparseVectorFromRatingList(ratingList, numFeatureElems))));
+					simElems.add(new SimilarElement(candidateId, currentSim));
 				} else { 
 					if (currentSim > this.minSim && currentSim > simElems.peek().similarity) {
 						// add this elem and drop current least similar elem
 						simElems.poll();
-						simElems.add(new SimilarElement(rs.getFilterByIdFromRating(ratingList.get(0)), currentSim));
+						simElems.add(new SimilarElement(candidateId, currentSim));
 					}
 				}
 			}
@@ -263,7 +273,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		return simElems;
 	}
 	
-	private ArrayList<Rating> normVector(ArrayList<Rating> v) {
+	private ArrayList<Rating> normList(ArrayList<Rating> v) {
 		float avg = (float) trainSet.getMeanForFilterById(trainSet.getFilterByIdFromRating(v.get(0)));
 		
 		// subtract average from each element
