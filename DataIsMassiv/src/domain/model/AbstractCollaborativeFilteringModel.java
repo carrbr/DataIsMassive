@@ -44,13 +44,16 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	
 	@Override
 	public Rating predict(Rating r) {
-		Queue<SimilarElement> simMovies = similarElements.get(r.getUserId());
-		if (simMovies == null) {
+		Queue<SimilarElement> simElems = similarElements.get(r.getUserId());
+		if (simElems == null || simElems.size() == 0) {
+			System.out.print("Change this code!");
+			if (simElems != null) System.out.println("simElems.size() = " + simElems.size()); // TODO remove these prints
+			else System.out.println();
 			return r.reRate((float) 3.0);
 		} else {
-			Rating result = r.reRate((float)generateRatingFromSimilar(simMovies, trainSet,
+			Rating result = r.reRate((float)generateRatingFromSimilar(simElems, trainSet,
 					trainSet.getFilterByIdFromRating(r), trainSet.getFeatureIdFromRating(r)));
-			System.out.println("result = " + result.getRating() + " userId = " + r.getUserId());
+			System.out.println("result = " + r);
 			return result;
 		}
 	}
