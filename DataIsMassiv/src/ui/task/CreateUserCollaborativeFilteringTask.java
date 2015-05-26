@@ -34,7 +34,7 @@ public class CreateUserCollaborativeFilteringTask extends TaskCommand {
 			oos = new ObjectOutputStream(
 					new FileOutputStream(new File(fileOut)));
 
-			oos.writeObject(new UserCollaborativeFilteringModel(this.trainingFile, this.numSimilarUsers));
+			oos.writeObject(new UserCollaborativeFilteringModel(this.trainingFile, this.numSimilarUsers, 0.02, 10, 0.5));
 
 		} finally {
 			if (oos != null)

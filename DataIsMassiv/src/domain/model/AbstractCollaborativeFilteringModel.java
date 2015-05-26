@@ -38,20 +38,27 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	/*
 	 * params for our model
 	 */
-	protected final double minSim = 0.02; // minimum similarity to be considered useful for predicting ratings
-	private final int minCount = 10;
+	private double minSim; // minimum similarity to be considered useful for predicting ratings
+	private int minCount; // must have at least this many similar elements to not hedge
+	private double pcWeight; // weighting (on a scale of 0..1) of pearson coefficient vs cosine similarity
 
 
-	// TODO should ideally add constructors that allow us to take arbitrary model parameters, but for now see above
-	public AbstractCollaborativeFilteringModel(String trainingSetFile, int n) {
+	public AbstractCollaborativeFilteringModel(String trainingSetFile, int n, double minSim, int minCount, double pcWeight) {
 		super();
 		this.trainingSetFile = trainingSetFile;
 		this.numSimilarElems = n;
-
+		this.minSim = minSim;
+		this.minCount = minCount;
+		this.pcWeight = pcWeight;
+		
 		// we will incur model construction cost immediately upon creation
 		buildModel();
 	}
-	
+
+	public AbstractCollaborativeFilteringModel(String trainingSetFile, int n) {
+		this(trainingSetFile, n, 0.02, 10, 0.5); // use default params
+	}
+
 	@Override
 	public Rating predict(Rating r) {
 		int filterById = trainSet.getFilterByIdFromRating(r);
@@ -308,7 +315,6 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	private double findSimilarity(int uId, int vId, AbstractRatingSet rs) {
 		double pc = pearsonCorrelation(uId, vId, rs);
 		double cs = cosineSimilarity(uId, vId, rs);
-		double pcWeight = 0.5;
 		return (cs * (1 - pcWeight) + pc * pcWeight);
 	}
 	

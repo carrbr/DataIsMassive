@@ -10,8 +10,8 @@ public class MovieCollaborativeFilteringModel extends AbstractCollaborativeFilte
 	 */
 	private static final long serialVersionUID = -555873276166650438L;
 
-	public MovieCollaborativeFilteringModel(String trainingSetFile, int n) {
-		super(trainingSetFile, n);
+	public MovieCollaborativeFilteringModel(String trainingSetFile, int n, double minSim, int minCount, double pcWeight) {
+		super(trainingSetFile, n, minSim, minCount, pcWeight);
 	}
 	
 	/*

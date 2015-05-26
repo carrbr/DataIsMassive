@@ -9,8 +9,8 @@ public class UserCollaborativeFilteringModel extends AbstractCollaborativeFilter
 	 */
 	private static final long serialVersionUID = -5344448264711157886L;
 	
-	public UserCollaborativeFilteringModel(String trainingSetFile, int n) {
-		super(trainingSetFile, n);
+	public UserCollaborativeFilteringModel(String trainingSetFile, int n, double minSim, int minCount, double pcWeight) {
+		super(trainingSetFile, n, minSim, minCount, pcWeight);
 	}
 	
 	/*

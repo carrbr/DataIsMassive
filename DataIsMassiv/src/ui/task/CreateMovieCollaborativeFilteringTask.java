@@ -34,7 +34,7 @@ public class CreateMovieCollaborativeFilteringTask extends TaskCommand {
 			oos = new ObjectOutputStream(
 					new FileOutputStream(new File(fileOut)));
 
-			oos.writeObject(new MovieCollaborativeFilteringModel(this.trainingFile, this.numSimilarMovies));
+			oos.writeObject(new MovieCollaborativeFilteringModel(this.trainingFile, this.numSimilarMovies, 0.02, 10, 0.75));
 
 		} finally {
 			if (oos != null)
