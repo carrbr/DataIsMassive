@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 
-import domain.model.CollaborativeFilteringModel;
+import domain.model.UserCollaborativeFilteringModel;
 
 public class CreateUserCollaborativeFilteringTask extends TaskCommand {
 
@@ -39,7 +39,7 @@ public class CreateUserCollaborativeFilteringTask extends TaskCommand {
 			oos = new ObjectOutputStream(
 					new FileOutputStream(new File(fileOut)));
 
-			oos.writeObject(new CollaborativeFilteringModel(this.trainingFile, this.numSimilarUsers));
+			oos.writeObject(new UserCollaborativeFilteringModel(this.trainingFile, this.numSimilarUsers));
 
 		} finally {
 			if (oos != null)
