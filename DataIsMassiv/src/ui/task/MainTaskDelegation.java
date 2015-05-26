@@ -33,6 +33,8 @@ public class MainTaskDelegation extends TaskCommand {
 			new CreateUserCollaborativeFilteringTask(reduced).exec();
 		} else if (match(args, "createMCF")) {
 				new CreateMovieCollaborativeFilteringTask(reduced).exec();
+		} else if (match(args, "combine")) {
+			new CombineModelTask(reduced).exec();
 		} else {
 			System.out.println("No matching command found");
 			writeHelp();

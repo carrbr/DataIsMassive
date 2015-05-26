@@ -47,6 +47,8 @@ public class Main {
 		// createMCF model/MCF.model data/M_train 100
 		// test model/MCF.model data/M_test data/M_test_result
 		// rmse data/M_test data/M_test_result
+		
+		// combine data/combine_result data/UCF109_107_test_result data/M109_107_test_result
 	}
 
 	private static void handleInput(String[] args) throws Exception {
