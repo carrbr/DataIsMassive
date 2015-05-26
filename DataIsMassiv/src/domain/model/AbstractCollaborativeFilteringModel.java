@@ -220,7 +220,6 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		Queue<SimilarElement> simElems = new PriorityQueue<SimilarElement>();
 		
 		// note, this assumes the number of ratings > numSimilarElems
-		int i = 0;
 		ArrayList<Rating> ratingList = null;
 		for (String candidate: candidates) {
 			int candidateId = Integer.parseInt(candidate);
@@ -229,22 +228,21 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 				continue; // no elem by this id in dataset
 			}
 			if (filterByElemRatingList.get(0).getUserId() != ratingList.get(0).getUserId()) { // ensure we don't count self as similar user
+				double currentSim = findSimilarity(sparseVectorFromRatingList(normedFilterByElemRatingList, numFeatureElems),
+						sparseVectorFromRatingList(ratingList, numFeatureElems));
 				// first we fill up the PriorityQueue
-				if (i < n) {
+				if (simElems.size() < n && currentSim > this.minSim) {
 					simElems.add(new SimilarElement(rs.getFilterByIdFromRating(ratingList.get(0)), 
 							findSimilarity(sparseVectorFromRatingList(normedFilterByElemRatingList, numFeatureElems),
 										sparseVectorFromRatingList(ratingList, numFeatureElems))));
 				} else { 
-					double currentSim = findSimilarity(sparseVectorFromRatingList(normedFilterByElemRatingList, numFeatureElems),
-							sparseVectorFromRatingList(ratingList, numFeatureElems + 1));
-					if (currentSim > simElems.peek().similarity) {
+					if (currentSim > this.minSim && currentSim > simElems.peek().similarity) {
 						// add this elem and drop current least similar elem
 						simElems.poll();
 						simElems.add(new SimilarElement(rs.getFilterByIdFromRating(ratingList.get(0)), currentSim));
 					}
 				}
 			}
-			i++;
 		}
 		return simElems;
 	}

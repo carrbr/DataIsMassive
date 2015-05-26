@@ -43,6 +43,10 @@ public class Main {
 		// test model/UCF.model data/A_test data/A_test_result
 		// rmse data/A_test data/A_test_result
 		
+		// split data/training.txt data/M 11
+		// createMCF model/MCF.model data/M_train 100
+		// test model/MCF.model data/A_test data/M_test_result
+		// rmse data/M_test data/M_test_result
 	}
 
 	private static void handleInput(String[] args) throws Exception {
