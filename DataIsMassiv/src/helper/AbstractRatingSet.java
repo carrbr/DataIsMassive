@@ -35,6 +35,7 @@ public abstract class AbstractRatingSet implements Serializable {
 		ratings = new Hashtable<Integer, ArrayList<Rating>>();
 		maxFeatureId = 0;
 		maxFilterById = 0;
+		filterByElemMeans = new Hashtable<Integer, Double>();
 	}
 	
 	public void addFilterByElemRating(Rating r) {
