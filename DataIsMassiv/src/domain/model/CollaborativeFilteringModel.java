@@ -79,7 +79,7 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 				double ratingValue = urs.getRatingValue(simUser.id, movieId);
 				if (ratingValue != 0 && simUser.similarity >= minSim) { // only for users who have rated this
 					result += ratingValue * (simUser.similarity / simTotal); // weight based on similarity
-					System.out.println("\tratingValue = " + ratingValue + ", weight = " + (simUser.similarity / simTotal) + ", similarity = " + simUser.similarity);
+					//System.out.println("\tratingValue = " + ratingValue + ", weight = " + (simUser.similarity / simTotal) + ", similarity = " + simUser.similarity);
 					count++;
 				}
 			}
@@ -88,7 +88,7 @@ public class CollaborativeFilteringModel extends AbstractRatingModel {
 		if (count == 0) { // no ratings qualified.  guess in the middle
 			result = 3.0;
 		}
-		System.out.println("result = " + result + ", simTotal = " + simTotal);
+		//System.out.println("result = " + result + ", simTotal = " + simTotal);
 		
 		return result;
 	}
