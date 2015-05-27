@@ -23,7 +23,7 @@ public class Main {
 
 		handleInput(args);
 
-		// split data/training.txt data/A 10
+		// split data/training.txt data/A 10 0
 		// createRandom model/random
 		// test model/random data/A_test data/A_test_result
 		// rmse data/A_test data/A_test_result

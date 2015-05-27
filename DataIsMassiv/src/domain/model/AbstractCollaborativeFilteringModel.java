@@ -39,6 +39,8 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	 * params for our model
 	 */
 	protected final double minSim = 0.05; // minimum similarity to be considered useful for predicting ratings
+	private final int minCount = 15;
+
 
 	// TODO should ideally add constructors that allow us to take arbitrary model parameters, but for now see above
 	public AbstractCollaborativeFilteringModel(String trainingSetFile, int n) {
@@ -59,11 +61,11 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			failCount++;
 			if (simElems == null) failCountNulls++;
 			System.out.println("num without similar elems = " + failCount + ", num null = " + failCountNulls);
-			return r.reRate((float) trainSet.getMeanForFilterById(filterById));
+			return r.reRate((float) 3.0); // we don't have this user in our data so the best we can do is guess in the middle
 		} else {
 			Rating result = r.reRate((float)generateRatingFromSimilar(simElems, trainSet,
 					filterById, trainSet.getFeatureIdFromRating(r)));
-			System.out.println("result = " + r);
+			System.out.println("result = " + result + ", r = " + r + ", diff = " + (result.getNiceFormatRating() - r.getNiceFormatRating()));
 			return result;
 		}
 	}
@@ -74,17 +76,15 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	 * This implementation computes a simple average.
 	 * @param similarSet Contains the N most similar vectors to the vector for the given filterBaseId
 	 * @param rs Rating set containing all ratings sorted by their filterById
-	 * @param filterBaseId ID for dimension we are performing collaborative filtering based on (i.e. user in user-based filtering)
+	 * @param filterById ID for dimension we are performing collaborative filtering based on (i.e. user in user-based filtering)
 	 * @param featureId ID in feature dimension (i.e. whatever component is represented in the vector space)
 	 * @return
 	 */
-	public double generateRatingFromSimilar(Queue<SimilarElement> similarSet, AbstractRatingSet rs, int filterBaseId, int featureId) {
-		double result = 0;
+	public double generateRatingFromSimilar(Queue<SimilarElement> similarSet, AbstractRatingSet rs, int filterById, int featureId) {
 		int count = 0;
-		int minCount = 15;
-		double hedgeWeight = minCount * 1.5 + 1;
-		double hedgeTotal = 2 * minCount;
-		double filterByElemAvg = -1;
+		double filterByElemAvg = rs.getMeanForFilterById(filterById);
+		double result = filterByElemAvg;
+
 	
 		// TODO modify to normalize other users whose ratings we are borrowing to generate new scores for users
 		
@@ -92,35 +92,65 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		double simTotal = 0;
 		for (SimilarElement simElem: similarSet) {
 			if (rs.getRatingValue(simElem.id, featureId) != 0  && simElem.similarity >= minSim) { // only count if it's a rating value worth using
-				simTotal += simElem.similarity; 
+				simTotal += simElem.similarity; // note right now similarities can only be positive because of minSim, o.w. need to take abs()
 			}
 		}
 		
+		/*
+		 * using weighted (by similarity) average of useful ratings (greating than minSim, and not unrated)
+		 * from similar elems.  Also we are norming the vectors of similar elems to the same average as the
+		 * elem that we are attemptimg to generate a rating for
+		 * 
+		 * E		- similar elements, represented by some (not all!) members of similarSet
+		 * r_ei 	- rating for element e on item i, result
+		 * r_avg_e	- average rating for element e, filterByElemAvg
+		 * k		- normalizing factor, 1/sum(abs(sim(e, e_prime))) for e_prime in E.  k = 1/simTotal
+		 * 
+		 * r_ei = r_avg_e + k * sum(sim(e, e_prime) * (r_e_primei - r_avg_e_prime)) for e_prime in E
+		 * 
+		 */
+		double r_avg_e_prime = -1;
+		double sum = 0.0;
 		if (simTotal > 0) { // only rate if similar elements actually have something in common
 			for (SimilarElement simElem: similarSet) {
-				double ratingValue = rs.getRatingValue(simElem.id, featureId);
-				if (ratingValue != 0 && simElem.similarity >= minSim) { // only for elems who have rated this
-					result += ratingValue * (simElem.similarity / simTotal); // weight based on similarity
+				double r_e_primei = rs.getRatingValue(simElem.id, featureId);
+				r_avg_e_prime = rs.getMeanForFilterById(simElem.id);
+				if (r_e_primei != 0 && simElem.similarity >= minSim) { // only for elems who have rated this
+					sum += (r_e_primei - r_avg_e_prime) * (simElem.similarity); // weight based on similarity
 					//System.out.println("\tratingValue = " + ratingValue + ", weight = " + (simUser.similarity / simTotal) + ", similarity = " + simUser.similarity);
 					count++;
 				}
 			}
+			sum /= simTotal;
 		} 
+		result += sum;
 		
 		// when we have few useful similar elems, hedge our bets and bias towards the middle
 		if (count <= minCount && count > 0) {
-			filterByElemAvg = rs.getMeanForFilterById(filterBaseId);
-			hedgeWeight -= count;
-			System.out.println("hedging... count = " + count + " prevResult = " + result + " resultWeight = " + ((hedgeTotal - hedgeWeight) / hedgeTotal)
-					+ " hedgeWeight = " + (hedgeWeight / hedgeTotal) + " avg = " + filterByElemAvg);
-			result = filterByElemAvg * (hedgeWeight / hedgeTotal) + result * ((hedgeTotal - hedgeWeight) / hedgeTotal);
+			result = hedgeBets(filterById, count, rs, result);
 		}
 		
-		if (count == 0) { // no ratings qualified.  guess in the middle
-			filterByElemAvg = rs.getMeanForFilterById(filterBaseId);
+		/*if (count == 0) { // no ratings qualified.  guess in the middle
 			System.out.println("Halp, no common ground" + " using avg = " + filterByElemAvg);
 			result = filterByElemAvg;
-		}
+		}*/
+		
+		return result;
+	}
+	
+	/**
+	 * This function moves the resulting rating prediction towards the filterByElem's average
+	 */
+	private double hedgeBets(int filterById, int count, AbstractRatingSet rs, double prevResult) {
+		double result = 0.0;
+		double hedgeWeight = minCount * 1.5 + 1;
+		double hedgeTotal = 2 * minCount;
+		double filterByElemAvg = rs.getMeanForFilterById(filterById);
+		
+		hedgeWeight -= count;
+		System.out.println("hedging... count = " + count + " prevResult = " + prevResult + " resultWeight = " + ((hedgeTotal - hedgeWeight) / hedgeTotal)
+				+ " hedgeWeight = " + (hedgeWeight / hedgeTotal) + " avg = " + filterByElemAvg);
+		result = filterByElemAvg * (hedgeWeight / hedgeTotal) + prevResult * ((hedgeTotal - hedgeWeight) / hedgeTotal);
 		
 		return result;
 	}
