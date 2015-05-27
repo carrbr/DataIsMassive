@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Map;
 
+import no.uib.cipr.matrix.sparse.SparseVector;
 import be.tarsos.lsh.Vector;
 import domain.Rating;
 
@@ -90,9 +91,39 @@ public abstract class AbstractRatingSet implements Serializable {
 		return ratingVec;
 	}
 	
+	public ArrayList<Rating> getFilterByElemNormRatingsList(int filterById) {
+		ArrayList<Rating> v = this.ratings.get(filterById); // TODO might this cause a null issue?
+		float avg = (float) getMeanForFilterById(getFilterByIdFromRating(v.get(0)));
+		
+		// subtract average from each element
+		ArrayList<Rating> norm = new ArrayList<Rating>();
+		for (int i = 0; i < v.size(); i++) {
+			norm.add(i, v.get(i).reRate(v.get(i).getRating() - avg));
+		}
+		return norm;
+	}
+	
 	public ArrayList<Rating> getFilterByElemRatings(int filterById) {
 		return ratings.get(filterById); // TODO this might return null... is that OK?
 	}
+	
+	public SparseVector getNormedSparseVectorFromRatingList(int filterById) {
+		int size = this.getMaxFeatureId();
+		ArrayList<Rating> filterByElemRatings = ratings.get(filterById);
+		double[] ratings = new double[filterByElemRatings.size()];
+		int [] indexes = new int[filterByElemRatings.size()];
+		
+		// index each rating by movieID
+		Rating r = null;
+		for (int i = 0; i < filterByElemRatings.size(); i++) {
+			r = filterByElemRatings.get(i);
+			ratings[i] = r.getRating(); // TODO check this code works properly
+			indexes[i] = getFeatureIdFromRating(r);
+		}
+		return new SparseVector(size, indexes, ratings);
+	}
+	
+
 	
 	public float getRatingValue(int filterById, int featureId) {
 		ArrayList<Rating> ratingList = ratings.get(filterById);
@@ -123,6 +154,10 @@ public abstract class AbstractRatingSet implements Serializable {
 		}
 		
 		return avg;
+	}
+	
+	public boolean containsFilterById(int filterById) {
+		return ratings.containsKey(filterById);
 	}
 	
 	public int getMaxFilterById() {

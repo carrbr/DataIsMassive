@@ -38,8 +38,8 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	/*
 	 * params for our model
 	 */
-	protected final double minSim = 0.05; // minimum similarity to be considered useful for predicting ratings
-	private final int minCount = 15;
+	protected final double minSim = 0.02; // minimum similarity to be considered useful for predicting ratings
+	private final int minCount = 10;
 
 
 	// TODO should ideally add constructors that allow us to take arbitrary model parameters, but for now see above
@@ -271,23 +271,17 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	}
 	
 	private Queue<SimilarElement> findNSimilarElems(int n, AbstractRatingSet rs, int queryFilterById, List<String> candidates, int numFeatureElems) {
-		ArrayList<Rating> filterByElemRatingList = rs.getFilterByElemRatings(queryFilterById);
-		ArrayList<Rating> normedFilterByElemRatingList = normList(filterByElemRatingList);
 		Queue<SimilarElement> simElems = new PriorityQueue<SimilarElement>();
 		
-		// note, this assumes the number of ratings > numSimilarElems
-		ArrayList<Rating> candidateRatingList = null;
 		int candidateId = -1;
 		for (String candidate: candidates) {
 			candidateId = Integer.parseInt(candidate);
-			candidateRatingList = normList(rs.getFilterByElemRatings(candidateId));
 			
-			if (candidateRatingList == null) {
+			if (!rs.containsFilterById(candidateId)) {
 				continue; // no elem by this id in dataset
 			}
 			if (queryFilterById != candidateId) { // ensure we don't count self as similar user
-				double currentSim = findSimilarity(sparseVectorFromRatingList(normedFilterByElemRatingList, numFeatureElems),
-						sparseVectorFromRatingList(candidateRatingList, numFeatureElems));
+				double currentSim = findSimilarity(queryFilterById, candidateId, rs);
 				// first we fill up the PriorityQueue
 				if (simElems.size() < n && currentSim > this.minSim) {
 					simElems.add(new SimilarElement(candidateId, currentSim));
@@ -303,31 +297,6 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		return simElems;
 	}
 	
-	private ArrayList<Rating> normList(ArrayList<Rating> v) {
-		float avg = (float) trainSet.getMeanForFilterById(trainSet.getFilterByIdFromRating(v.get(0)));
-		
-		// subtract average from each element
-		ArrayList<Rating> norm = new ArrayList<Rating>();
-		for (int i = 0; i < v.size(); i++) {
-			norm.add(i, v.get(i).reRate(v.get(i).getRating() - avg));
-		}
-		return norm;
-	}
-	
-	private SparseVector sparseVectorFromRatingList(ArrayList<Rating> filterByElemRatings, int size) {
-		double[] ratings = new double[filterByElemRatings.size()];
-		int [] indexes = new int[filterByElemRatings.size()];
-		
-		// index each rating by movieID
-		Rating r = null;
-		for (int i = 0; i < filterByElemRatings.size(); i++) {
-			r = filterByElemRatings.get(i);
-			ratings[i] = r.getRating(); // TODO check this code works properly
-			indexes[i] = trainSet.getFeatureIdFromRating(r);
-		}
-		return new SparseVector(size, indexes, ratings);
-	}
-	
 	/**
 	 * This method computes a similarity value between two vectors.  This particular implementation
 	 * uses the cosine similarity, cos(u, v) = (u * v)/(||u|| * ||v||)
@@ -336,7 +305,15 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	 * @param v second user rating vector to compute similarity to
 	 * @return value for the similarity
 	 */
-	private double findSimilarity(SparseVector u, SparseVector v) {
+	private double findSimilarity(int uId, int vId, AbstractRatingSet rs) {
+		double pc = pearsonCorrelation(uId, vId, rs);
+		double cs = cosineSimilarity(uId, vId, rs);
+		return (cs + pc) / 2;
+	}
+	
+	private double cosineSimilarity(int uId, int vId, AbstractRatingSet rs) {
+		SparseVector u = rs.getNormedSparseVectorFromRatingList(uId);
+		SparseVector v = rs.getNormedSparseVectorFromRatingList(vId);
 		double dotProdUV = u.dot(v);
 		double frobeniusNormU = u.norm(Norm.TwoRobust);
 		double frobeniusNormV = v.norm(Norm.TwoRobust);
@@ -345,6 +322,54 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			sim = dotProdUV / (frobeniusNormU * frobeniusNormV);
 		}
 		return sim;
+	}
+	
+	private double pearsonCorrelation(int uId, int vId, AbstractRatingSet rs) {
+		ArrayList<Rating> u = rs.getFilterByElemRatings(uId);
+		double uAvg = rs.getMeanForFilterById(uId);
+		ArrayList<Rating> v = rs.getFilterByElemRatings(vId);
+		double vAvg = rs.getMeanForFilterById(vId);
+		
+		double numerator = 0.0;
+		double denominator = 0.0;
+		int i = 0, j = 0;
+		double uSumSquare = 0.0, vSumSquare = 0.0;
+		Rating uRate = u.get(i);
+		Rating vRate = v.get(j);
+		int uFeature = rs.getFeatureIdFromRating(uRate);
+		int vFeature = rs.getFeatureIdFromRating(vRate);
+		while (true) { // iterate until no more mutually rated items
+			if (uFeature == vFeature) { // both have rated same item
+				numerator += (vFeature - vAvg) * (uFeature - uAvg);
+				uSumSquare += (uFeature - uAvg) * (uFeature - uAvg);
+				vSumSquare += (vFeature - vAvg) * (vFeature - vAvg);
+				if (j < v.size() && i < u.size()) {
+					vRate = v.get(j++);	
+					vFeature = rs.getFeatureIdFromRating(vRate);
+					uRate = u.get(i++);
+					uFeature = rs.getFeatureIdFromRating(uRate);
+				} else {
+					break; // exhausted all mutual ratings
+				}
+			} else if (vFeature < uFeature && j < v.size()) {
+				vRate = v.get(j++);
+				vFeature = rs.getFeatureIdFromRating(vRate);
+			} else if (vFeature > uFeature && i < u.size()) {
+				uRate = u.get(i++);
+				uFeature = rs.getFeatureIdFromRating(uRate);
+			} else {
+				break; // exhausted all mutual ratings
+			}
+			
+			
+		}
+		denominator = Math.sqrt(uSumSquare * vSumSquare);
+				
+		double result = 0.0; // if we would have to divide by zero, just return zero anyways
+		if (denominator != 0) {
+			result = numerator / denominator;
+		}
+		return result;
 	}
 	
 	protected abstract AbstractRatingSet generateRatingSet();
