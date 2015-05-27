@@ -38,11 +38,11 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 	private final double[] newMovieVec;
 
 	public NeuronInputBackModel() {
-		vecTime = 30;
-		vecUser = 100;
-		vecMovies = 100;
+		vecTime = 18;
+		vecUser = 30;
+		vecMovies = 30;
 		int inputCount = vecTime + vecUser + vecMovies;
-		nn = new Neural3LayerNetwork(inputCount, 60, 30, 1);
+		nn = new Neural3LayerNetwork(inputCount, 50, 20, 1);
 		user = new HashMap<>();
 		movies = new HashMap<>();
 		newUserVec = new double[vecUser];
@@ -51,13 +51,12 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 	}
 
 	private void generateNewVec() {
-		Random r = new Random();
 		for (int i = 0; i < vecUser; i++) {
-			newUserVec[i] = r.nextDouble() - .5;
+			newUserVec[i] = 0;
 		}
 
 		for (int i = 0; i < vecMovies; i++) {
-			newMovieVec[i] = r.nextDouble() - .5;
+			newMovieVec[i] = 0;
 		}
 
 	}
@@ -108,12 +107,12 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 			movies.remove(movieId);
 			rwlMovies.writeLock().unlock();
 		}
-		
+
 		if (card.fakeInput > random.nextDouble()) {
 			rwlMovies.readLock().lock();
 			boolean exits = !movies.containsKey(movieId);
 			rwlMovies.readLock().unlock();
-			if(exits){
+			if (exits) {
 				rwlMovies.writeLock().lock();
 				movies.put(movieId, MatrixUtils.createRealVector(newMovieVec));
 				rwlMovies.writeLock().unlock();
@@ -134,7 +133,7 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 			rwlUser.readLock().lock();
 			boolean exits = !user.containsKey(userId);
 			rwlUser.readLock().unlock();
-			if(exits){
+			if (exits) {
 				rwlUser.writeLock().lock();
 				movies.put(userId, MatrixUtils.createRealVector(newUserVec));
 				rwlUser.writeLock().unlock();
@@ -163,14 +162,12 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 
 	static private RealVector generateTimeVector(int time) {
 		// First in 4 is frequeny, other 3 are phase translation
-		double[][] para = { { 4984, 0, 1.1, 2.5 }, { 3562.43, .25, 1.6, 2.1 },
-				{ 1460.97, .5, 1.8, 3.3 }, { 365.243, .2, 1.35, 2.6 },
-				{ 91.31, .5, 1.7, 2.4 }, { 29.6, 0, .9, 1.6 },
-				{ 10, .4, 1.6, 3 }, { 7, .2, .7, 2.1 }, { 4, .3, 1.7, 2.2 },
-				{ 3, .1, 1.5, 2.9 } };
-		double[] data = new double[30];
-		for (int i = 0; i < 10; i++) {
-			double localPhase = time / para[i][0];
+		double[][] para = { { 4984, 0, 1.1, 2.5 }, { 1460.97, .5, 1.8, 3.3 },
+				{ 365.243, .2, 1.35, 2.6 }, { 29.6, 0, .9, 1.6 },
+				{ 7, .2, .7, 2.1 }, { 3, .1, 1.5, 2.9 } };
+		double[] data = new double[para.length * 3];
+		for (int i = 0; i < para.length; i++) {
+			double localPhase = time / para[i][0] * 2 * Math.PI;
 			data[i * 3 + 0] = Math.sin(localPhase + para[i][1]) / 2 + .5;
 			data[i * 3 + 1] = Math.sin(localPhase + para[i][2]) / 2 + .5;
 			data[i * 3 + 2] = Math.sin(localPhase + para[i][3]) / 2 + .5;
@@ -258,6 +255,8 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 		public void run() {
 			try {
 				Random random = new Random();
+				System.out.println("worker Thread: " + this.getName()
+						+ " has rand:" + random.nextLong());
 				barrierLearner.acquire(); // Wait for initial start signal
 				while (isRunning()) {
 					learnCycle(random);
@@ -269,7 +268,8 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 			}
 		}
 
-		private void learnCycle(Random random) throws InterruptedException {
+		private synchronized void learnCycle(Random random)
+				throws InterruptedException {
 
 			LearnResponse allResponses = new LearnResponse();
 
@@ -320,12 +320,12 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 
 		int nThreads = 4;
 		int nGradientGroup = 7;
-		
+
 		Semaphore barrierLearner = new Semaphore(0);
 		Semaphore updateWriteBlock = new Semaphore(0);
 
 		ArrayList<LearningThread> threads = new ArrayList<>();
-		
+
 		for (int i = 0; i < nThreads; i++) {
 			threads.add(new LearningThread(nGradientGroup, barrierLearner,
 					updateWriteBlock, howToLearn, trainSet));
@@ -355,8 +355,8 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 				if (timeSinceLastUpdate > 10000) {
 					timeLastUpdate = System.currentTimeMillis();
 					System.out.println(((double) totalDoneLearnCycles) / counts
-							* 100 + " % learn cycles since " + secondsSinceStart
-							+ " seconds ago");
+							* 100 + " % learn cycles since "
+							+ secondsSinceStart + " seconds ago");
 				}
 
 			} catch (InterruptedException e) {
@@ -373,7 +373,7 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 		}
 
 		System.out.println("Done after: "
-				+ ((double) System.currentTimeMillis()- timeStart)/1000.0 
+				+ ((double) System.currentTimeMillis() - timeStart) / 1000.0
 				+ " seconds");
 
 	}

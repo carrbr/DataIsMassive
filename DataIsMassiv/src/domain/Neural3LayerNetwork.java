@@ -10,7 +10,7 @@ import org.apache.commons.math3.linear.RealVectorChangingVisitor;
 
 public class Neural3LayerNetwork implements Serializable {
 	private static final long serialVersionUID = 1L;
-	private static double a = .3;
+	private static double a = .5;
 	private RealMatrix hh;
 	private RealMatrix h;
 	private RealMatrix o;

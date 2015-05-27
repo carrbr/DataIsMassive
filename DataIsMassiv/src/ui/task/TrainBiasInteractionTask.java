@@ -12,51 +12,40 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import domain.LearningCardNN;
 import domain.Rating;
-import domain.model.NeuronInputBackModel;
+import domain.model.BiasInteractionModel;
 
-public class TrainNNTask extends TaskCommand {
+public class TrainBiasInteractionTask extends TaskCommand {
 
 	private String fileIn;
 	private String fileOut;
 	private String fileTrainSet;
-	private int numOfQuestions;
-	private LearningCardNN howToLearn;
+	private int mode;
 
-	public TrainNNTask(String[] args) {
+	public TrainBiasInteractionTask(String[] args) {
 		super(args);
 
 		if (!needsHelp & args.length == 4) {
 			this.fileIn = args[0];
 			this.fileOut = args[1];
 			this.fileTrainSet = args[2];
-			this.numOfQuestions = Integer.valueOf(args[3]);
-			setUPLearningCard();
+			this.mode = Integer.parseInt(args[3]);
+		}else{
+			needsHelp = true;
 		}
-	}
-
-	private void setUPLearningCard() {
-		howToLearn = new LearningCardNN();
-		howToLearn.etaNN = 0.5;
-		howToLearn.etaMovie = 0.4;
-		howToLearn.etaUser = 0.5;
-
-		howToLearn.resetMovie = false;
-		howToLearn.resetUser = false;
-
-		howToLearn.resetRateMovie = 0.01;
-		howToLearn.resetRateUser = 0.01;
 	}
 
 	@Override
 	public void exec() throws Exception {
 		if (writeHelpIfNeeded())
 			return;
-		NeuronInputBackModel model = readInModel(fileIn);
+		BiasInteractionModel model = readInModel(fileIn);
 		List<Rating> trainSet = readInTrainSet(fileTrainSet);
 
-		model.trainParallel(trainSet, howToLearn, numOfQuestions);
+		if(mode == 0)
+			model.train(trainSet);
+		if(mode == 1)
+			model.trainNN(trainSet);
 
 		writeOutModel(fileOut, model);
 	}
@@ -79,7 +68,7 @@ public class TrainNNTask extends TaskCommand {
 		return list;
 	}
 
-	private void writeOutModel(String fileOut, NeuronInputBackModel model)
+	private void writeOutModel(String fileOut, BiasInteractionModel model)
 			throws FileNotFoundException, IOException {
 		try (ObjectOutputStream oos = new ObjectOutputStream(
 				new FileOutputStream(new File(fileOut)))) {
@@ -88,11 +77,11 @@ public class TrainNNTask extends TaskCommand {
 
 	}
 
-	private NeuronInputBackModel readInModel(String fileIn)
+	private BiasInteractionModel readInModel(String fileIn)
 			throws FileNotFoundException, IOException, ClassNotFoundException {
 		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(
 				new File(fileIn)))) {
-			return (NeuronInputBackModel) ois.readObject();
+			return (BiasInteractionModel) ois.readObject();
 		}
 	}
 

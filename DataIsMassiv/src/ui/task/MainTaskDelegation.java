@@ -29,6 +29,10 @@ public class MainTaskDelegation extends TaskCommand {
 			new CreateNeuralModelTask(reduced).exec();
 		} else if (match(args, "trainNN")) {
 			new TrainNNTask(reduced).exec();
+		} else if (match(args, "createBI")) {
+			new CreateBiasInteractionTask(reduced).exec();
+		} else if (match(args, "trainBI")) {
+			new TrainBiasInteractionTask(reduced).exec();
 		} else {
 			System.out.println("No matching command found");
 			writeHelp();
