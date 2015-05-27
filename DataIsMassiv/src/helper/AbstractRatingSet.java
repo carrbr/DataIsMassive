@@ -108,7 +108,7 @@ public abstract class AbstractRatingSet implements Serializable {
 	}
 	
 	public SparseVector getNormedSparseVectorFromRatingList(int filterById) {
-		int size = this.getMaxFeatureId();
+		int size = this.getMaxFeatureId() + 1;
 		ArrayList<Rating> filterByElemRatings = ratings.get(filterById);
 		double[] ratings = new double[filterByElemRatings.size()];
 		int [] indexes = new int[filterByElemRatings.size()];

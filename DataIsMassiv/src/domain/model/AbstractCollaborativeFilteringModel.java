@@ -308,7 +308,8 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	private double findSimilarity(int uId, int vId, AbstractRatingSet rs) {
 		double pc = pearsonCorrelation(uId, vId, rs);
 		double cs = cosineSimilarity(uId, vId, rs);
-		return (cs + pc) / 2;
+		double pcWeight = 0.5;
+		return (cs * (1 - pcWeight) + pc * pcWeight);
 	}
 	
 	private double cosineSimilarity(int uId, int vId, AbstractRatingSet rs) {
@@ -340,9 +341,9 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		int vFeature = rs.getFeatureIdFromRating(vRate);
 		while (true) { // iterate until no more mutually rated items
 			if (uFeature == vFeature) { // both have rated same item
-				numerator += (vFeature - vAvg) * (uFeature - uAvg);
-				uSumSquare += (uFeature - uAvg) * (uFeature - uAvg);
-				vSumSquare += (vFeature - vAvg) * (vFeature - vAvg);
+				numerator += (vRate.getRating() - vAvg) * (uRate.getRating() - uAvg);
+				uSumSquare += (uRate.getRating() - uAvg) * (uRate.getRating() - uAvg);
+				vSumSquare += (vRate.getRating() - vAvg) * (vRate.getRating() - vAvg);
 				if (j < v.size() && i < u.size()) {
 					vRate = v.get(j++);	
 					vFeature = rs.getFeatureIdFromRating(vRate);
