@@ -36,24 +36,22 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 	}
 
 	public void trainNN(List<Rating> toTrain) {
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < 10; i++) {
 			ArrayList<Rating> rlist = new ArrayList<>(toTrain.size());
 			Random rand = new Random();
-			while(rlist.size() < toTrain.size())
+			while (rlist.size() < toTrain.size())
 				rlist.add(toTrain.get(rand.nextInt(toTrain.size())));
-			
-			movie.train(toTrain, base);
-			user.train(toTrain, base);
 			interaction.train(toTrain, base, movie, user);
-			
+
 		}
 
 	}
 
 	@Override
 	public double getDelta(Rating rating) {
-		return bound(base.getDelta(rating) + movie.getDelta(rating)
-				+ user.getDelta(rating) + interaction.getDelta(rating));
+		double d = base.getDelta(rating) + movie.getDelta(rating)
+				+ user.getDelta(rating) + interaction.getDelta(rating);
+		return bound(d);
 	}
 
 	private double bound(double d) {

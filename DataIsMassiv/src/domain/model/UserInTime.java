@@ -4,74 +4,53 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealVector;
-
-import domain.LearningCardNN;
-import domain.Neural3LayerNetwork;
-import domain.Neural3LayerNetwork.LearnResponse;
 import domain.Rating;
 
 public class UserInTime implements DelatAccess, Serializable {
 
 	private static final long serialVersionUID = 1L;
-	private static final int hh = 10;
-	private static final int h = 5;
+	private final HashMap<Integer, AVGPair> movieTime;
 
-	private final HashMap<Integer, Neural3LayerNetwork> movieTime;
+	private static class AVGPair implements Serializable{
+		private static final long serialVersionUID = -2861423457296709820L;
+		int count = 0;
+		double totalScore = 0;
+
+		public void add(double score) {
+			count++;
+			totalScore += score;
+		}
+
+		public double get() {
+			return totalScore / count;
+		}
+	}
 
 	public UserInTime() {
 		movieTime = new HashMap<>();
 	}
 
 	public void train(List<Rating> toTrain, BaseLearner base) {
-		System.out.println("starting training on biasUser(t)");
+		System.out.println("starting training on biasUser");
 		for (Rating r : toTrain) {
 
-			Neural3LayerNetwork network = movieTime.get(r.getUserId());
-			if (network == null) {
-				network = new Neural3LayerNetwork(TimeVector.timeVecDim, hh, h,
-						1);
-				movieTime.put(r.getUserId(), network);
+			AVGPair avg = movieTime.get(r.getUserId());
+			if (avg == null) {
+				avg = new AVGPair();
+				movieTime.put(r.getUserId(), avg);
 			}
-
-			teachNetwork(base, r, network);
+			avg.add(base.getDelta(r) - r.getRating());
 		}
 
 	}
 
-	private void teachNetwork(BaseLearner base, Rating r,
-			Neural3LayerNetwork network) {
-		RealVector response = createResponse(base, r);
-		LearnResponse lr = network.learn(
-				TimeVector.createVectorOn(r.getDateId()), response);
-		LearningCardNN howToLearn = new LearningCardNN();
-		howToLearn.etaNN = .3;
-		network.writeLayerUpdate(lr, howToLearn);
-	}
-
-	private RealVector createResponse(BaseLearner base, Rating r) {
-		double v[] = new double[1];
-		v[0] = toNN(r.getRating() - base.getDelta(r));
-		RealVector response = MatrixUtils.createRealVector(v);
-		return response;
-	}
-	
-	private double toScale(double delta){
-		return delta*4 -2;
-	}
-	private double toNN(double delta){
-		return (delta+2)/4;
-	}
-	
-
 	@Override
 	public double getDelta(Rating rating) {
-		Neural3LayerNetwork network = movieTime.get(rating.getMovieId());
-		if (network == null)
-			return 0;
-		return toScale(network.respond(TimeVector.createVectorOn(rating.getDateId()))
-				.getEntry(0));
+		AVGPair avg = movieTime.get(rating.getUserId());
+		if (avg == null) {
+			avg = new AVGPair();
+			movieTime.put(rating.getUserId(), avg);
+		}
+		return avg.get();
 	}
-
 }

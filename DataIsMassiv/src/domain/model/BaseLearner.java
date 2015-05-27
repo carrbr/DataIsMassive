@@ -16,6 +16,7 @@ public class BaseLearner implements DelatAccess, Serializable {
 			c += r.getRating();
 		}
 		overAll = c/toTrain.size();
+		System.out.println("avg is "+ overAll);
 	}
 
 	@Override

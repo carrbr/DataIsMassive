@@ -31,6 +31,7 @@ public class CreateBiasInteractionTask extends TaskCommand {
 					new FileOutputStream(new File(fileOut)));
 
 			oos.writeObject(new BiasInteractionModel());
+			System.out.println("new "+ BiasInteractionModel.class.getCanonicalName() + " created");
 
 		} finally {
 			if (oos != null)

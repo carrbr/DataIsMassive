@@ -3,6 +3,7 @@ package domain.model;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealVector;
@@ -11,13 +12,15 @@ import domain.Rating;
 
 public class Interaction implements DelatAccess, Serializable {
 	private static final long serialVersionUID = 1L;
-	private static double eta = .2;
-	private final int featureSize = 30;
+	private static double etaMovie = .05;
+	private static double etaUser = .1;
+	private final int featureSize = 8;
 	private HashMap<Integer, RealVector> movies = new HashMap<>();
 	private HashMap<Integer, RealVector> users = new HashMap<>();
 
 	public void train(List<Rating> toTrain, BaseLearner base,
 			MovieInTime movieTime, UserInTime userTime) {
+		Random rand = new Random();
 
 		System.out.println("starting training on interaction");
 		for (Rating rating : toTrain) {
@@ -29,15 +32,28 @@ public class Interaction implements DelatAccess, Serializable {
 
 			double error = teacher - student;
 
-			double correctionFactor = sigmoDiff(student) * error;
+			double gradientDelta = sigmoDiff(student) * error;
 			RealVector movieVector = getMovieVector(rating);
-			RealVector deltaMovie = movieVector.mapMultiply(correctionFactor
-					* eta);
+			RealVector userVector = getUserVector(rating);
+
+			RealVector userStepIntensity = userVector.map((double x) -> {
+				if (x >= 0)
+					return x * x + 1 + (rand.nextDouble() - 0.5);
+				else
+					return -(x * x + 1 + (rand.nextDouble() - 0.5));
+			});
+			RealVector deltaMovie = userStepIntensity.mapMultiply(gradientDelta
+					* etaMovie / featureSize);
 			movies.put(rating.getMovieId(), movieVector.add(deltaMovie));
 
-			RealVector userVector = getUserVector(rating);
-			RealVector deltaUser = userVector.mapMultiply(correctionFactor
-					* eta);
+			RealVector movieStepIntensity = movieVector.map((double x) -> {
+				if (x >= 0)
+					return x * x + 1 + (rand.nextDouble() - 0.5);
+				else
+					return -(x * x + 1 + (rand.nextDouble() - 0.5));
+			});
+			RealVector deltaUser = movieStepIntensity.mapMultiply(gradientDelta
+					* etaUser / featureSize);
 			users.put(rating.getUserId(), userVector.add(deltaUser));
 		}
 
@@ -48,11 +64,11 @@ public class Interaction implements DelatAccess, Serializable {
 	}
 
 	private static double toScale(double sigmoidOut) {
-		return sigmoidOut * 8 - 4;
+		return sigmoidOut * 10 - 5;
 	}
 
 	private static double toSigmoid(double scale) {
-		return (scale + 4) / 8;
+		return (scale + 5) / 10;
 	}
 
 	private static double sigmoDiff(double out) {
