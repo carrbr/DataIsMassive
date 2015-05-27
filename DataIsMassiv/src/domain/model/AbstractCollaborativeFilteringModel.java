@@ -153,7 +153,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		
 		// when we have few useful similar elems, hedge our bets and bias towards the middle
 		if (count <= minCount && count > 0) {
-			result = hedgeBets(filterById, count, rs, result);
+//			result = hedgeBets(filterById, count, rs, result);
 		}
 		
 		try {

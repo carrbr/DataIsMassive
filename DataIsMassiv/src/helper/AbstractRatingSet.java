@@ -157,6 +157,7 @@ public abstract class AbstractRatingSet implements Serializable {
 		if (!filterByMeansCalculated) { // avg needs to be calculated
 			for (int i = 0; i <= maxFilterById; i++) {
 				ArrayList<Rating> ratingList = ratings.get(i);
+				avg = 0.0;
 				if (ratingList == null || ratingList.size() == 0) {
 					avg = getOverallMeanRating();
 				} else {
