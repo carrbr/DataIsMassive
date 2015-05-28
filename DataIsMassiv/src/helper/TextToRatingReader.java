@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import domain.Rating;
+import domain.SimilarityRating;
 
 public class TextToRatingReader implements Closeable {
 
@@ -22,30 +23,22 @@ public class TextToRatingReader implements Closeable {
 		String s = reader.readLine();
 		if (s == null || !s.contains(","))
 			return null;
-		int subi[] = generateInt(s.split(","));
+		String subi[] = s.split(",");
+		if (subi.length == 5) {
+			return new SimilarityRating(Double.parseDouble(subi[0]), Integer.parseInt(subi[1]), Integer.parseInt(subi[2]),
+					Integer.parseInt(subi[3]), Float.parseFloat(subi[4]));
+		}
 		if (subi.length == 4) {
-			return new Rating(subi[0], subi[1], subi[2],  (float)subi[3]/10);
+			return new Rating(Integer.parseInt(subi[0]), Integer.parseInt(subi[1]),
+					Integer.parseInt(subi[2]), Float.parseFloat(subi[3]));
 		}
 		if (subi.length == 3) {
-			return new Rating(subi[0], subi[1], subi[2]);
+			return new Rating(Integer.parseInt(subi[0]), Integer.parseInt(subi[1]),
+					Integer.parseInt(subi[2]));
 		}
 		return null;
 	}
-
-	private int[] generateInt(String[] sub) {
-		int i[] = new int[sub.length];
-		for (int j = 0; j < sub.length; j++) {
-			// rating can be in .1 steps therefore save x10 in int
-			if (j == 3) {
-				i[j] = (int) (Float.parseFloat(sub[j]) * 10);
-				continue;
-			}
-
-			i[j] = Integer.parseInt(sub[j]);
-		}
-		return i;
-	}
-
+	
 	@Override
 	public void close() throws IOException {
 		reader.close();

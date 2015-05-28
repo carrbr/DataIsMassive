@@ -57,6 +57,8 @@ public class TestModelTask extends TaskCommand {
 				in.close();
 			if (out != null)
 				out.close();
+			if (model != null)
+				model.close();
 		}
 	}
 

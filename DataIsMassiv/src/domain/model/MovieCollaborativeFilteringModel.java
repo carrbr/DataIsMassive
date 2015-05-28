@@ -22,4 +22,9 @@ public class MovieCollaborativeFilteringModel extends AbstractCollaborativeFilte
 	protected AbstractRatingSet generateRatingSet() {
 		return new MovieRatingSet();
 	}
+	
+	@Override
+	protected String getLogFileName() {
+		return "MCF.log";
+	}
 }

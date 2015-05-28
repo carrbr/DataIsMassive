@@ -21,4 +21,9 @@ public class UserCollaborativeFilteringModel extends AbstractCollaborativeFilter
 	protected AbstractRatingSet generateRatingSet() {
 		return new UserRatingSet();
 	}
+
+	@Override
+	protected String getLogFileName() {
+		return "UCF.log";
+	}
 }

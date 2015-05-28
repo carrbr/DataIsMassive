@@ -22,13 +22,27 @@ public class UserBackwardsCollaborativeFilteringModel extends AbstractCollaborat
 		return new UserRatingSet();
 	}
 	
+	/**
+	 * flips rating to other side of the rating scale, centered around the avg. Truncates scale at 1.0 and 5.0
+	 */
 	@Override
-	protected double getFlippedRatingIfNecessary(double result) {
-		return 6 - result; // gets rating on inverted scale, i.e. 1.1 is now 6 - 1.1 = 4.9
+	protected double getFlippedRatingIfNecessary(double result, double avg) {
+		result = 2 * avg - result;
+		if (result > 5.0) {
+			result = 5.0;
+		} else if (result < 1.0) {
+			result = 1.0;
+		}
+		return result;
 	}
 	
 	@Override
 	protected double getFlipedRatingIfNeccesary(double sim) {
 		return -1 * sim;
+	}
+	
+	@Override
+	protected String getLogFileName() {
+		return "BUCF.log";
 	}
 }

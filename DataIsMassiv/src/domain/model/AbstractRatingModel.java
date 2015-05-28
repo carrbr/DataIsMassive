@@ -9,4 +9,8 @@ public abstract class AbstractRatingModel implements Serializable {
 
 	public abstract Rating predict(Rating r);
 
+	public void close() {
+		// stub implementation -- not necessary for most subclasses	
+	}
+
 }

@@ -39,14 +39,14 @@ public class Main {
 		// trainNN model/NN3_1 model/NN3_2 data/training.txt 21000000
 		
 		// split data/training.txt data/UCF 11
-		// createUCF model/UCF.model data/A_train 100
-		// test model/UCF.model data/UCF_test data/UCF_test_result
-		// rmse data/UCF_test data/UCF_test_result
+		// createUCF model/UCF107_101.model data/UCF107_101_train 100
+		// test model/UCF107_101.model data/UCF107_101_test data/UCF107_101_test_result
+		// rmse data/UCF107_101_test data/UCF107_101_test_result
 		
 		// split data/training.txt data/M 11
-		// createMCF model/MCF.model data/M_train 100
-		// test model/MCF.model data/M_test data/M_test_result
-		// rmse data/M_test data/M_test_result
+		// createMCF model/MCF.model data/UCF107_101_train 100
+		// test model/MCF.model data/UCF107_101_test data/MCF107_101_test_result
+		// rmse data/UCF107_101_test data/MCF107_101_test_result
 		
 		// createUCF model/BUCF.model data/UCF107_101_train 100 back
 		// test model/BUCF.model data/UCF107_101_test data/BUCF107_101_test_result

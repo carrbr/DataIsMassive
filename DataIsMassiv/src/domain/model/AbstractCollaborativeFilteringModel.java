@@ -4,7 +4,10 @@ import helper.AbstractRatingSet;
 import helper.SimilarElement;
 import helper.TextToRatingReader;
 
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +29,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	protected AbstractRatingSet trainSet;
 	protected int numSimilarElems;
 	protected ArrayList<Queue<SimilarElement>> similarElements;  // array of groups of n users similar to user at index
+	private BufferedWriter out;
 	
 	// TODO remove this later
 	private static int failCount;
@@ -62,19 +66,31 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	@Override
 	public Rating predict(Rating r) {
 		int filterById = trainSet.getFilterByIdFromRating(r);
+		Rating result = null;
 		
-		Queue<SimilarElement> simElems = similarElements.get(filterById);
-		if (simElems == null || simElems.size() == 0) {
-			failCount++;
-			if (simElems == null) failCountNulls++;
-			System.out.println("num without similar elems = " + failCount + ", num null = " + failCountNulls);
-			return r.reRate((float) 3.0); // we don't have this user in our data so the best we can do is guess in the middle
-		} else {
-			Rating result = r.reRate((float)generateRatingFromSimilar(simElems, trainSet,
-					filterById, trainSet.getFeatureIdFromRating(r)));
-			System.out.println("result = " + result + ", r = " + r + ", diff = " + (result.getNiceFormatRating() - r.getNiceFormatRating()));
-			return result;
+		try {
+			if (out == null) {
+				out = new BufferedWriter(new FileWriter(new File("data/" + getLogFileName())));
+			}
+			
+			Queue<SimilarElement> simElems = similarElements.get(filterById);
+			if (simElems == null || simElems.size() == 0) {
+				failCount++;
+				if (simElems == null) failCountNulls++;
+				System.out.println("num without similar elems = " + failCount + ", num null = " + failCountNulls);
+				result =  r.reRate((float) 3.0); // we don't have this user in our data so the best we can do is guess in the middle
+				out.write("0,"); // no similarity
+			} else {
+				result = r.reRate((float)generateRatingFromSimilar(simElems, trainSet,
+						filterById, trainSet.getFeatureIdFromRating(r), out));
+			}
+			out.write(result.toString() + "\n");
+		} catch (IOException e) {
+			System.err.println("Issue with log file writer");
+			e.printStackTrace();
 		}
+		return result;
+
 	}
 	
 	
@@ -87,13 +103,10 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	 * @param featureId ID in feature dimension (i.e. whatever component is represented in the vector space)
 	 * @return
 	 */
-	public double generateRatingFromSimilar(Queue<SimilarElement> similarSet, AbstractRatingSet rs, int filterById, int featureId) {
+	public double generateRatingFromSimilar(Queue<SimilarElement> similarSet, AbstractRatingSet rs, int filterById, int featureId, BufferedWriter out) {
 		int count = 0;
 		double filterByElemAvg = rs.getMeanForFilterById(filterById);
 		double result = filterByElemAvg;
-
-	
-		// TODO modify to normalize other users whose ratings we are borrowing to generate new scores for users
 		
 		// will use this to weight by similarity scores
 		double simTotal = 0;
@@ -137,12 +150,14 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			result = hedgeBets(filterById, count, rs, result);
 		}
 		
-		/*if (count == 0) { // no ratings qualified.  guess in the middle
-			System.out.println("Halp, no common ground" + " using avg = " + filterByElemAvg);
-			result = filterByElemAvg;
-		}*/
+		try {
+			out.write(Double.toString(simTotal) + ",");
+		} catch (IOException e) {
+			System.err.println("Error writing to log file");
+			e.printStackTrace();
+		}
 		
-		return getFlippedRatingIfNecessary(result);
+		return getFlippedRatingIfNecessary(result, filterByElemAvg);
 	}
 	
 	/**
@@ -383,9 +398,22 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		return sim;
 	}
 	
-	protected double getFlippedRatingIfNecessary(double result) {
+	protected double getFlippedRatingIfNecessary(double result, double avg) {
 		return result;
 	}
 	
+	@Override
+	public void close() {
+		if (out != null) {
+			try {
+				out.close();
+			} catch (IOException e) {
+				System.err.println("Failed to close log file writer");
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	protected abstract AbstractRatingSet generateRatingSet();
+	protected abstract String getLogFileName();
 }
