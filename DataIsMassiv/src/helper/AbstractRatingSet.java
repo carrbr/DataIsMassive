@@ -27,16 +27,27 @@ public abstract class AbstractRatingSet implements Serializable {
 	 * 
 	 * The ArrayList of Ratings contains all ratings for that user
 	 */
-	protected Map<Integer, ArrayList<Rating>> ratings;
-	protected int maxFeatureId;
-	protected int maxFilterById;
-	protected Map<Integer, Double> filterByElemMeans;
+	private Map<Integer, ArrayList<Rating>> ratings;
+	private int maxFeatureId;
+	private int maxFilterById;
+	private boolean filterByMeansCalculated;
+	private ArrayList<Double> filterByElemMeans;
+	private boolean featureMeansCalculated;
+	private ArrayList<Double> featureElemMeans;
+	private ArrayList<Integer> featureElemCounts;
+	private int numRatings;
+	private double ratingSum;
 	
 	public AbstractRatingSet() {
 		ratings = new Hashtable<Integer, ArrayList<Rating>>();
 		maxFeatureId = 0;
 		maxFilterById = 0;
-		filterByElemMeans = new Hashtable<Integer, Double>();
+		filterByElemMeans = new ArrayList<Double>();
+		featureMeansCalculated = false;
+		featureElemMeans = new ArrayList<Double>();
+		featureElemCounts = new ArrayList<Integer>();
+		numRatings = 0;
+		ratingSum = 0.0;
 	}
 	
 	public void addFilterByElemRating(Rating r) {
@@ -52,11 +63,13 @@ public abstract class AbstractRatingSet implements Serializable {
 			ratings.put(filterById, ratingVector);
 		}
 		
-		// book keeping for IDs
+		// book keeping
+		numRatings++;
+		ratingSum += r.getRating();
+		addMeanDataForFeature(getFeatureIdFromRating(r), r.getRating());
 		if (featureId > this.maxFeatureId) {
 			this.maxFeatureId = featureId;
 		}
-		
 		if (filterById > this.maxFilterById) {
 			this.maxFilterById = filterById;
 		}
@@ -124,7 +137,6 @@ public abstract class AbstractRatingSet implements Serializable {
 	}
 	
 
-	
 	public float getRatingValue(int filterById, int featureId) {
 		ArrayList<Rating> ratingList = ratings.get(filterById);
 		if (ratingList == null) { // this rating does not exist
@@ -142,18 +154,47 @@ public abstract class AbstractRatingSet implements Serializable {
 	
 	public double getMeanForFilterById(int filterById) {
 		double avg = 0.0;
-		if (this.filterByElemMeans.containsKey(filterById)) { // avg has already been calculated
-			avg = filterByElemMeans.get(filterById); 
-		} else { // avg needs to be calculated
-			for (Rating rate: ratings.get(filterById)) {
-				avg += rate.getRating();
+		if (!filterByMeansCalculated) { // avg needs to be calculated
+			for (int i = 0; i <= maxFilterById; i++) {
+				ArrayList<Rating> ratingList = ratings.get(i);
+				if (ratingList == null || ratingList.size() == 0) {
+					avg = getOverallMeanRating();
+				} else {
+					for (Rating rate: ratingList) {
+						avg += rate.getRating();
+					}
+					avg /= ratingList.size();
+				}
+				// store for later reuse
+				filterByElemMeans.add(filterById, avg); // TODO should this just be add()?
 			}
-			avg /= ratings.get(filterById).size();
-			// store for later reuse
-			this.filterByElemMeans.put(filterById, avg);
+			filterByElemMeans.trimToSize(); // this shouldn't be increasing anymore so trim down for efficiency
+			filterByMeansCalculated = true;
 		}
-		
-		return avg;
+		return filterByElemMeans.get(filterById);
+	}
+	
+	public double getMeanForFeatureId(int featureId) {
+		double curr = -1.0;
+		if (!featureMeansCalculated) { // avg needs to be calculated
+			for (int i = 0; i <= maxFeatureId; i++) {
+				curr = featureElemMeans.get(i);
+				if (curr == 0) { // nothing here, just use overall avg
+					featureElemMeans.set(i, getOverallMeanRating());
+				} else {
+					featureElemMeans.set(i, curr / featureElemCounts.get(i));
+				}
+			}
+			// be efficient with memory, won't need extra space anymore
+			featureElemMeans.trimToSize();
+			featureElemCounts = null;
+			featureMeansCalculated = true;
+		}
+		return featureElemMeans.get(featureId);
+	}
+	
+	public double getOverallMeanRating() {
+		return ratingSum / numRatings;
 	}
 	
 	public boolean containsFilterById(int filterById) {
@@ -166,6 +207,15 @@ public abstract class AbstractRatingSet implements Serializable {
 	
 	public int getMaxFeatureId() {
 		return maxFeatureId;
+	}
+	
+	private void addMeanDataForFeature(int featureId, double rating) {
+		while (!(featureId < featureElemMeans.size())) {
+			featureElemMeans.add(0.0);
+			featureElemCounts.add(0);
+		}
+		featureElemMeans.set(featureId, featureElemMeans.get(featureId) + rating);
+		featureElemCounts.set(featureId, featureElemCounts.get(featureId) + 1);
 	}
 	
 	/*

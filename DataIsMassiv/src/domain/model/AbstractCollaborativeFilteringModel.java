@@ -111,8 +111,8 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	 */
 	public double generateRatingFromSimilar(Queue<SimilarElement> similarSet, AbstractRatingSet rs, int filterById, int featureId, BufferedWriter out) {
 		int count = 0;
-		double filterByElemAvg = rs.getMeanForFilterById(filterById);
-		double result = filterByElemAvg;
+		double baseline = computeFilterByElemBaselineRating(filterById, featureId, rs);
+		double result = baseline;
 		
 		// will use this to weight by similarity scores
 		double simTotal = 0;
@@ -129,7 +129,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		 * 
 		 * E		- similar elements, represented by some (not all!) members of similarSet
 		 * r_ei 	- rating for element e on item i, result
-		 * r_avg_e	- average rating for element e, filterByElemAvg
+		 * r_base	- baseline rating for element e, see computeFilterByElemBaselineRating() for details
 		 * k		- normalizing factor, 1/sum(abs(sim(e, e_prime))) for e_prime in E.  k = 1/simTotal
 		 * 
 		 * r_ei = r_avg_e + k * sum(sim(e, e_prime) * (r_e_primei - r_avg_e_prime)) for e_prime in E
@@ -163,7 +163,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			e.printStackTrace();
 		}
 		
-		result = getFlippedRatingIfNecessary(result, filterByElemAvg);
+		result = getFlippedRatingIfNecessary(result, baseline);
 		result = truncateIfNecessary(result); // TODO ideally scale based on deviation instead of truncating
 		
 		// TODO Remove this
@@ -171,6 +171,24 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			System.out.println("Halp: rating = " + result + " uId = " + filterById + " mId = " + featureId);
 		}
 		
+		return result;
+	}
+	
+	/**
+	 * computes the baseline rating b_xi = u + b_x + b_i, where u is the overall average rating,
+	 * b_x is the element's deviation from the average (avg_elem_x - u), and b_i is the feature's
+	 * deviation from the average (avg_feature_i - u).
+	 * 
+	 * note: b_xi = u + b_x + b_i = u + (avg_elem_x - u) + (avg_feature_i - u) = avg_elem_x + avg_feature_i - u
+	 * 
+	 * @param filterById
+	 * @param rs
+	 * @return
+	 */
+	private double computeFilterByElemBaselineRating(int filterById, int featureId, AbstractRatingSet rs) {
+		double result = rs.getMeanForFilterById(filterById);
+		result += rs.getMeanForFeatureId(featureId);
+		result -= rs.getOverallMeanRating();
 		return result;
 	}
 	
