@@ -17,12 +17,15 @@ public class CombineModelTask extends TaskCommand {
 	private String resultFile;
 	private float weight;
 	Queue<Rating> ratings;
+	Queue<Rating> potentialTroubleRatings;
 
 	public CombineModelTask(String resultFile, String[] modelResultFiles) {
 		this.modelResultFiles = modelResultFiles;
 		this.resultFile = resultFile;
 		this.weight = (float) (1.0 / modelResultFiles.length);
 		this.ratings = new ArrayDeque<Rating>();
+		this.potentialTroubleRatings = new ArrayDeque<Rating>();
+
 	}
 
 	public CombineModelTask(String[] args) {
@@ -36,6 +39,8 @@ public class CombineModelTask extends TaskCommand {
 			}
 			this.weight = (float) (1.0 / modelResultFiles.length);
 			this.ratings = new ArrayDeque<Rating>();
+			this.potentialTroubleRatings = new ArrayDeque<Rating>();
+
 		}
 	}
 
@@ -55,14 +60,14 @@ public class CombineModelTask extends TaskCommand {
 				in = new TextToRatingReader(modelResultFiles[i]);
 				while ((r = (SimilarityRating)in.readNext()) != null) {
 					rSim = r.getSimilarity();
-					if (r.getRating() > 5.0 || r.getRating() < 1.0) {
-						System.out.println("Halp rating = " + r.getRating() + " uId = " + r.getUserId() + " mId = " + r.getMovieId());
-					}
 					if (i != 0) {
 						rPrev = (SimilarityRating)ratings.poll();
 						ratings.add(rPrev.addToRating(rSim, (float)rSim * r.getRating()));
 					} else { // first iteration, need to fill the queue
-						ratings.add(r.addToRating(rSim, (float)rSim * r.getRating()));
+						if (r.getSimilarity() == 0.0) {
+							potentialTroubleRatings.add(r);
+						}
+						ratings.add(new SimilarityRating(rSim, r.getUserId(), r.getMovieId(), r.getDateId(), (float)rSim * r.getRating()));
 					}
 				}
 	
@@ -78,12 +83,9 @@ public class CombineModelTask extends TaskCommand {
 				r = (SimilarityRating) ratings.poll();
 				rSim = r.getSimilarity();
 				if (rSim == 0.0) { // no one has a clue... just return the average
-					rate = r.reRate((float) (r.getRating() / modelResultFiles.length));
+					rate = findRating(r); //r.reRate((float) (r.getRating() / modelResultFiles.length));
 				} else {
 					rate = r.reRate((float) (r.getRating() / r.getSimilarity()));
-				}
-				if (rate.getRating() > 5.0 || rate.getRating() < 1.0) {
-					System.out.println("Halp");
 				}
 				out.write(rate.toString() + "\n");
 			}
@@ -92,5 +94,20 @@ public class CombineModelTask extends TaskCommand {
 				out.close();
 		}
 
+	}
+	
+	private Rating findRating(Rating r) {
+		Rating s = null;
+		int i = potentialTroubleRatings.size();
+		do {
+			s = potentialTroubleRatings.poll();
+			if (s.getUserId() != r.getUserId() || s.getMovieId() != r.getMovieId() || s.getDateId() != r.getDateId()) {
+				potentialTroubleRatings.add(s);
+			} else {
+				break;
+			}
+			i--;
+		} while (i > 0);
+		return s;
 	}
 }
