@@ -14,7 +14,7 @@ public class Interaction implements DelatAccess, Serializable {
 	private static final long serialVersionUID = 1L;
 	private static double etaMovie = .05;
 	private static double etaUser = .1;
-	private final int featureSize = 8;
+	private int featureSize = 50;
 	private HashMap<Integer, RealVector> movies = new HashMap<>();
 	private HashMap<Integer, RealVector> users = new HashMap<>();
 
@@ -38,9 +38,9 @@ public class Interaction implements DelatAccess, Serializable {
 
 			RealVector userStepIntensity = userVector.map((double x) -> {
 				if (x >= 0)
-					return x * x + 1 + (rand.nextDouble() - 0.5);
+					return Math.abs(x) + 1 + (rand.nextDouble() - 0.5) / 2;
 				else
-					return -(x * x + 1 + (rand.nextDouble() - 0.5));
+					return -(Math.abs(x) + 1 + (rand.nextDouble() - 0.5) / 2);
 			});
 			RealVector deltaMovie = userStepIntensity.mapMultiply(gradientDelta
 					* etaMovie / featureSize);
@@ -56,6 +56,11 @@ public class Interaction implements DelatAccess, Serializable {
 					* etaUser / featureSize);
 			users.put(rating.getUserId(), userVector.add(deltaUser));
 		}
+		RealVector testMovieVector = movies.get(toTrain.get(0).getMovieId());
+		System.out.println(testMovieVector);
+		RealVector testUserVector = users.get(toTrain.get(0).getUserId());
+		System.out.println(testUserVector);
+		System.out.println(testUserVector.dotProduct(testMovieVector));
 
 	}
 
@@ -64,11 +69,11 @@ public class Interaction implements DelatAccess, Serializable {
 	}
 
 	private static double toScale(double sigmoidOut) {
-		return sigmoidOut * 10 - 5;
+		return (sigmoidOut - .5) * 10;
 	}
 
 	private static double toSigmoid(double scale) {
-		return (scale + 5) / 10;
+		return (scale / 10) + .5;
 	}
 
 	private static double sigmoDiff(double out) {
@@ -95,7 +100,7 @@ public class Interaction implements DelatAccess, Serializable {
 		RealVector realVector = users.get(rating.getUserId());
 		if (realVector == null) {
 			realVector = MatrixUtils.createRealVector(new double[featureSize]);
-			movies.put(rating.getUserId(), realVector);
+			users.put(rating.getUserId(), realVector);
 		}
 		return realVector;
 	}

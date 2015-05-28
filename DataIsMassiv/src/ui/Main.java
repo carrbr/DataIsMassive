@@ -39,6 +39,16 @@ public class Main {
 		// trainNN model/NN3_1 model/NN3_2 data/training.txt 21000000
 		// trainBI model/BI1 model/BI2 data/A_test 1
 
+		/*
+		trainBI model/B0 model/B1 data/A_train 0
+		trainBI model/B1 model/B1 data/A_train 1
+		test model/B1 data/A_test data/A_test_result
+		avg is 3.600761125332697
+		starting training on biasMovie
+		starting training on biasUser
+		starting training on interaction
+		rmse data/A_test data/A_test_result
+		*/
 	}
 
 	private static void handleInput(String[] args) throws Exception {
