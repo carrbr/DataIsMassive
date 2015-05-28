@@ -48,6 +48,14 @@ public class Main {
 		// test model/MCF.model data/M_test data/M_test_result
 		// rmse data/M_test data/M_test_result
 		
+		// createUCF model/BUCF.model data/UCF107_101_train 100 back
+		// test model/BUCF.model data/UCF107_101_test data/BUCF107_101_test_result
+		// rmse data/UCF107_101_test data/BUCF107_101_test_result
+		
+		// createMCF model/BMCF.model data/UCF107_101_train 100 back
+		// test model/BMCF.model data/UCF107_101_test data/BMCF107_101_test_result
+		// rmse data/UCF107_101_test data/BMCF107_101_test_result
+		
 		// combine data/combine_result data/UCF109_107_test_result data/M109_107_test_result
 	}
 

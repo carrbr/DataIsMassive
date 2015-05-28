@@ -142,7 +142,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			result = filterByElemAvg;
 		}*/
 		
-		return result;
+		return getFlippedRatingIfNecessary(result);
 	}
 	
 	/**
@@ -315,7 +315,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	private double findSimilarity(int uId, int vId, AbstractRatingSet rs) {
 		double pc = pearsonCorrelation(uId, vId, rs);
 		double cs = cosineSimilarity(uId, vId, rs);
-		return (cs * (1 - pcWeight) + pc * pcWeight);
+		return getFlipedRatingIfNeccesary(cs * (1 - pcWeight) + pc * pcWeight);
 	}
 	
 	private double cosineSimilarity(int uId, int vId, AbstractRatingSet rs) {
@@ -376,6 +376,14 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		if (denominator != 0) {
 			result = numerator / denominator;
 		}
+		return result;
+	}
+	
+	protected double getFlipedRatingIfNeccesary(double sim) {
+		return sim;
+	}
+	
+	protected double getFlippedRatingIfNecessary(double result) {
 		return result;
 	}
 	
