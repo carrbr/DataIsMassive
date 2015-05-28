@@ -59,9 +59,9 @@ public abstract class AbstractRatingSet implements Serializable {
 		ratingSum = 0.0;
 		
 		filterByElemTemporalMeans = new ArrayList<Map<Integer, Float>>();
-		filterByElemTemporalCounts = new ArrayList<Map<Integer, Float>>();
+		filterByElemTemporalCounts = new ArrayList<Map<Integer, Integer>>();
 		featureElemTemporalMeans = new ArrayList<Map<Integer, Float>>();
-		featureElemTemporalCounts = new ArrayList<Map<Integer, Float>>();
+		featureElemTemporalCounts = new ArrayList<Map<Integer, Integer>>();
 	}
 	
 	public void addFilterByElemRating(Rating r) {
