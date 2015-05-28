@@ -29,11 +29,6 @@ public class MovieBackwardsCollaborativeFilteringModel extends AbstractCollabora
 	@Override
 	protected double getFlippedRatingIfNecessary(double result, double avg) {
 		result = 2 * avg - result;
-		if (result > 5.0) {
-			result = 5.0;
-		} else if (result < 1.0) {
-			result = 1.0;
-		}
 		return result;
 	}
 	

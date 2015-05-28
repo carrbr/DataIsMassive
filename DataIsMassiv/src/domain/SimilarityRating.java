@@ -13,6 +13,10 @@ public class SimilarityRating extends Rating {
 		this.similarity = similarity;
 	}
 	
+	public Rating addToRating(double sim, float r) {
+		return new SimilarityRating(similarity + sim, getUserId(), getMovieId(), getDateId(), getRating() + r);
+	}
+	
 	public double getSimilarity() {
 		return this.similarity;
 	}

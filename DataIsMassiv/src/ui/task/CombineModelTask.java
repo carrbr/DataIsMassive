@@ -4,16 +4,12 @@ import helper.TextToRatingReader;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
 import domain.Rating;
-import domain.model.AbstractRatingModel;
+import domain.SimilarityRating;
 
 public class CombineModelTask extends TaskCommand {
 
@@ -48,21 +44,25 @@ public class CombineModelTask extends TaskCommand {
 		if (writeHelpIfNeeded())
 			return;
 
-
+		SimilarityRating r = null;
+		SimilarityRating rPrev = null;
+		double rSim = -1.0;
 		TextToRatingReader in = null;
 		BufferedWriter out = null;
 
 		for (int i = 0; i < modelResultFiles.length; i++) {
 			try {
 				in = new TextToRatingReader(modelResultFiles[i]);
-				Rating r = null;
-				Rating rPrev = null;
-				while ((r = in.readNext()) != null) {
+				while ((r = (SimilarityRating)in.readNext()) != null) {
+					rSim = r.getSimilarity();
+					if (r.getRating() > 5.0 || r.getRating() < 1.0) {
+						System.out.println("Halp rating = " + r.getRating() + " uId = " + r.getUserId() + " mId = " + r.getMovieId());
+					}
 					if (i != 0) {
-						rPrev = ratings.poll();
-						ratings.add(r.reRate(r.getRating() * weight + rPrev.getRating()));
+						rPrev = (SimilarityRating)ratings.poll();
+						ratings.add(rPrev.addToRating(rSim, (float)rSim * r.getRating()));
 					} else { // first iteration, need to fill the queue
-						ratings.add(r.reRate(r.getRating() * weight));
+						ratings.add(r.addToRating(rSim, (float)rSim * r.getRating()));
 					}
 				}
 	
@@ -73,8 +73,19 @@ public class CombineModelTask extends TaskCommand {
 		}
 		try {
 			out = new BufferedWriter(new FileWriter(new File(resultFile)));
+			Rating rate = null;
 			while (ratings.peek() != null) {
-				out.write(ratings.poll().toString() + "\n");
+				r = (SimilarityRating) ratings.poll();
+				rSim = r.getSimilarity();
+				if (rSim == 0.0) { // no one has a clue... just return the average
+					rate = r.reRate((float) (r.getRating() / modelResultFiles.length));
+				} else {
+					rate = r.reRate((float) (r.getRating() / r.getSimilarity()));
+				}
+				if (rate.getRating() > 5.0 || rate.getRating() < 1.0) {
+					System.out.println("Halp");
+				}
+				out.write(rate.toString() + "\n");
 			}
 		} finally {
 			if (out != null)

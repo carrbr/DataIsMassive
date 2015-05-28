@@ -56,7 +56,7 @@ public class Main {
 		// test model/BMCF.model data/UCF107_101_test data/BMCF107_101_test_result
 		// rmse data/UCF107_101_test data/BMCF107_101_test_result
 		
-		// combine data/combine_result data/UCF109_107_test_result data/M109_107_test_result
+		// combine data/combine_result data/UCF.log data/MCF.log data/BMCF.log
 	}
 
 	private static void handleInput(String[] args) throws Exception {

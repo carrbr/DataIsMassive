@@ -34,9 +34,11 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	// TODO remove this later
 	private static int failCount;
 	private static int failCountNulls;
+	private static int processedCount;
 	static {
 		failCount = 0;
 		failCountNulls = 0;
+		processedCount = 0;
 	}
 	
 	/*
@@ -67,7 +69,10 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	public Rating predict(Rating r) {
 		int filterById = trainSet.getFilterByIdFromRating(r);
 		Rating result = null;
-		
+		if (processedCount % 10000 == 0) {
+			System.out.println("rated " + processedCount + " elems");
+		}
+		processedCount++;
 		try {
 			if (out == null) {
 				out = new BufferedWriter(new FileWriter(new File("data/" + getLogFileName())));
@@ -89,6 +94,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			System.err.println("Issue with log file writer");
 			e.printStackTrace();
 		}
+		
 		return result;
 
 	}
@@ -157,7 +163,15 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			e.printStackTrace();
 		}
 		
-		return getFlippedRatingIfNecessary(result, filterByElemAvg);
+		result = getFlippedRatingIfNecessary(result, filterByElemAvg);
+		result = truncateIfNecessary(result); // TODO ideally scale based on deviation instead of truncating
+		
+		// TODO Remove this
+		if (result > 5.0 || result < 1.0) {
+			System.out.println("Halp: rating = " + result + " uId = " + filterById + " mId = " + featureId);
+		}
+		
+		return result;
 	}
 	
 	/**
@@ -170,8 +184,8 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		double filterByElemAvg = rs.getMeanForFilterById(filterById);
 		
 		hedgeWeight -= count;
-		System.out.println("hedging... count = " + count + " prevResult = " + prevResult + " resultWeight = " + ((hedgeTotal - hedgeWeight) / hedgeTotal)
-				+ " hedgeWeight = " + (hedgeWeight / hedgeTotal) + " avg = " + filterByElemAvg);
+//		System.out.println("hedging... count = " + count + " prevResult = " + prevResult + " resultWeight = " + ((hedgeTotal - hedgeWeight) / hedgeTotal)
+//				+ " hedgeWeight = " + (hedgeWeight / hedgeTotal) + " avg = " + filterByElemAvg);
 		result = filterByElemAvg * (hedgeWeight / hedgeTotal) + prevResult * ((hedgeTotal - hedgeWeight) / hedgeTotal);
 		
 		return result;
@@ -399,6 +413,15 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	}
 	
 	protected double getFlippedRatingIfNecessary(double result, double avg) {
+		return result;
+	}
+	
+	private double truncateIfNecessary(double result) {
+		if (result > 5.0) {
+			result = 5.0;
+		} else if (result < 1.0) {
+			result = 1.0;
+		}
 		return result;
 	}
 	
