@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.TreeMap;
 
 import no.uib.cipr.matrix.sparse.SparseVector;
 import be.tarsos.lsh.Vector;
@@ -38,6 +39,14 @@ public abstract class AbstractRatingSet implements Serializable {
 	private int numRatings;
 	private double ratingSum;
 	
+	/*
+	 * for storing and computing temporal mean data
+	 */
+	private ArrayList<Map<Integer, Float>> filterByElemTemporalMeans;
+	private ArrayList<Map<Integer, Integer>> filterByElemTemporalCounts;
+	private ArrayList<Map<Integer, Float>> featureElemTemporalMeans;
+	private ArrayList<Map<Integer, Integer>> featureElemTemporalCounts;
+	
 	public AbstractRatingSet() {
 		ratings = new Hashtable<Integer, ArrayList<Rating>>();
 		maxFeatureId = 0;
@@ -48,6 +57,11 @@ public abstract class AbstractRatingSet implements Serializable {
 		featureElemCounts = new ArrayList<Integer>();
 		numRatings = 0;
 		ratingSum = 0.0;
+		
+		filterByElemTemporalMeans = new ArrayList<Map<Integer, Float>>();
+		filterByElemTemporalCounts = new ArrayList<Map<Integer, Float>>();
+		featureElemTemporalMeans = new ArrayList<Map<Integer, Float>>();
+		featureElemTemporalCounts = new ArrayList<Map<Integer, Float>>();
 	}
 	
 	public void addFilterByElemRating(Rating r) {
@@ -220,6 +234,53 @@ public abstract class AbstractRatingSet implements Serializable {
 		}
 		featureElemMeans.set(featureId, featureElemMeans.get(featureId) + rating);
 		featureElemCounts.set(featureId, featureElemCounts.get(featureId) + 1);
+	}
+	
+	private void addToTemporalMeanData(int filterById, int featureId, Rating rating) {
+		int numBuckets = 10; // TODO evaluate if this is right, and make plumbing to parameterize
+		Map<Integer, Float> mBucket = null;
+		Map<Integer, Integer> cBucket = null;
+		
+		// use integer division to put each set of numBuckets subsequent dateIds into the same bucket
+		int temporalBucket = rating.getDateId() / numBuckets;
+		
+		// handle filterById
+		while (!(filterById < filterByElemTemporalMeans.size())) {
+			filterByElemTemporalMeans.add(null);
+			filterByElemTemporalCounts.add(null);
+		}
+		if (filterByElemTemporalMeans.get(filterById) == null) { // create new bucket
+			mBucket = new TreeMap<Integer, Float>();
+			mBucket.put(temporalBucket, rating.getRating());
+			filterByElemTemporalMeans.set(filterById, mBucket);
+			cBucket = new TreeMap<Integer, Integer>();
+			cBucket.put(temporalBucket, 1);
+			filterByElemTemporalCounts.set(filterById, cBucket);
+		} else { // bucket exists -- update
+			mBucket = filterByElemTemporalMeans.get(filterById);
+			mBucket.replace(temporalBucket, mBucket.get(temporalBucket) + rating.getRating());
+			cBucket = filterByElemTemporalCounts.get(filterById);
+			cBucket.replace(temporalBucket, cBucket.get(temporalBucket) + 1);
+		}
+		
+		// handle featureId
+		while (!(featureId < featureElemTemporalMeans.size())) {
+			featureElemTemporalMeans.add(null);
+			featureElemTemporalCounts.add(null);
+		}
+		if (featureElemTemporalMeans.get(filterById) == null) { // create new bucket
+			mBucket = new TreeMap<Integer, Float>();
+			mBucket.put(temporalBucket, rating.getRating());
+			featureElemTemporalMeans.set(filterById, mBucket);
+			cBucket = new TreeMap<Integer, Integer>();
+			cBucket.put(temporalBucket, 1);
+			featureElemTemporalCounts.set(filterById, cBucket);
+		} else { // bucket exists -- update
+			mBucket = featureElemTemporalMeans.get(filterById);
+			mBucket.replace(temporalBucket, mBucket.get(temporalBucket) + rating.getRating());
+			cBucket = featureElemTemporalCounts.get(filterById);
+			cBucket.replace(temporalBucket, cBucket.get(temporalBucket) + 1);
+		}
 	}
 	
 	/*
