@@ -166,8 +166,11 @@ public abstract class AbstractRatingSet implements Serializable {
 					}
 					avg /= ratingList.size();
 				}
-				// store for later reuse
-				filterByElemMeans.add(filterById, avg); // TODO should this just be add()?
+				// be careful when storing so we don't move any other elements in the list...
+				while (!(i < filterByElemMeans.size())) {
+					filterByElemMeans.add(0.0);
+				}
+				filterByElemMeans.set(i, avg);
 			}
 			filterByElemMeans.trimToSize(); // this shouldn't be increasing anymore so trim down for efficiency
 			filterByMeansCalculated = true;
