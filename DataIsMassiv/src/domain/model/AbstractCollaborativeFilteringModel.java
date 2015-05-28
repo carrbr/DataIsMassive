@@ -111,8 +111,6 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	 */
 	public double generateRatingFromSimilar(Queue<SimilarElement> similarSet, AbstractRatingSet rs, int filterById, int featureId, BufferedWriter out) {
 		int count = 0;
-		double baseline = computeFilterByElemBaselineRating(filterById, featureId, rs);
-		double result = baseline;
 		
 		// will use this to weight by similarity scores
 		double simTotal = 0;
@@ -129,20 +127,22 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		 * 
 		 * E		- similar elements, represented by some (not all!) members of similarSet
 		 * r_ei 	- rating for element e on item i, result
-		 * r_base	- baseline rating for element e, see computeFilterByElemBaselineRating() for details
+		 * r_base_e	- baseline rating for element e, see computeFilterByElemBaselineRating() for details
 		 * k		- normalizing factor, 1/sum(abs(sim(e, e_prime))) for e_prime in E.  k = 1/simTotal
 		 * 
-		 * r_ei = r_avg_e + k * sum(sim(e, e_prime) * (r_e_primei - r_avg_e_prime)) for e_prime in E
+		 * r_ei = r_base_e + k * sum(sim(e, e_prime) * (r_e_primei - r_avg_e_prime)) for e_prime in E
 		 * 
 		 */
-		double r_avg_e_prime = -1;
+		double r_base_e = computeFilterByElemBaselineRating(filterById, featureId, rs);
+		double result = r_base_e;
+		double r_base_e_prime = -1;
 		double sum = 0.0;
 		if (simTotal > 0) { // only rate if similar elements actually have something in common
 			for (SimilarElement simElem: similarSet) {
 				double r_e_primei = rs.getRatingValue(simElem.id, featureId);
-				r_avg_e_prime = rs.getMeanForFilterById(simElem.id);
+				r_base_e_prime = computeFilterByElemBaselineRating(simElem.id, featureId, rs);
 				if (r_e_primei != 0 && simElem.similarity >= minSim) { // only for elems who have rated this
-					sum += (r_e_primei - r_avg_e_prime) * (simElem.similarity); // weight based on similarity
+					sum += (r_e_primei - r_base_e_prime) * (simElem.similarity); // weight based on similarity
 					//System.out.println("\tratingValue = " + ratingValue + ", weight = " + (simUser.similarity / simTotal) + ", similarity = " + simUser.similarity);
 					count++;
 				}
@@ -163,7 +163,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			e.printStackTrace();
 		}
 		
-		result = getFlippedRatingIfNecessary(result, baseline);
+		result = getFlippedRatingIfNecessary(result, r_base_e);
 		result = truncateIfNecessary(result); // TODO ideally scale based on deviation instead of truncating
 		
 		// TODO Remove this
