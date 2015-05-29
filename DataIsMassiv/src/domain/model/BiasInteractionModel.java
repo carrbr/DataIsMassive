@@ -32,7 +32,7 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 		base.train(toTrain);
 		movie.train(toTrain, base);
 		user.train(toTrain, base);
-		interaction.train(toTrain, base, movie, user);
+		interaction.train(toTrain, base, movie, user, .05);
 	}
 
 	public void trainNN(List<Rating> toTrain) {
@@ -41,7 +41,7 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 			Random rand = new Random();
 			while (rlist.size() < toTrain.size())
 				rlist.add(toTrain.get(rand.nextInt(toTrain.size())));
-			interaction.train(rlist, base, movie, user);
+			interaction.train(rlist, base, movie, user, 0);
 
 		}
 

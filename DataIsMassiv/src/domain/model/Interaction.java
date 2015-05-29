@@ -14,12 +14,13 @@ public class Interaction implements DelatAccess, Serializable {
 	private static final long serialVersionUID = 1L;
 	private static double etaMovie = .05;
 	private static double etaUser = .1;
+	private static double lambda = .01;
 	private int featureSize = 50;
 	private HashMap<Integer, RealVector> movies = new HashMap<>();
 	private HashMap<Integer, RealVector> users = new HashMap<>();
 
 	public void train(List<Rating> toTrain, BaseLearner base,
-			MovieInTime movieTime, UserInTime userTime) {
+			MovieInTime movieTime, UserInTime userTime, double randomNess) {
 		Random rand = new Random();
 
 		System.out.println("starting training on interaction");
@@ -36,31 +37,29 @@ public class Interaction implements DelatAccess, Serializable {
 			RealVector movieVector = getMovieVector(rating);
 			RealVector userVector = getUserVector(rating);
 
-			RealVector userStepIntensity = userVector.map((double x) -> {
-				if (x >= 0)
-					return Math.abs(x) + 1 + (rand.nextDouble() - 0.5) / 2;
-				else
-					return -(Math.abs(x) + 1 + (rand.nextDouble() - 0.5) / 2);
-			});
-			RealVector deltaMovie = userStepIntensity.mapMultiply(gradientDelta
-					* etaMovie / featureSize);
-			movies.put(rating.getMovieId(), movieVector.add(deltaMovie));
+			RealVector deltaMovie = userVector.mapMultiply(gradientDelta
+					* etaMovie);
+			deltaMovie = deltaMovie.subtract(movieVector.mapMultiply(lambda
+					* etaMovie));
 
-			RealVector movieStepIntensity = movieVector.map((double x) -> {
-				if (x >= 0)
-					return x * x + 1 + (rand.nextDouble() - 0.5);
-				else
-					return -(x * x + 1 + (rand.nextDouble() - 0.5));
-			});
-			RealVector deltaUser = movieStepIntensity.mapMultiply(gradientDelta
-					* etaUser / featureSize);
-			users.put(rating.getUserId(), userVector.add(deltaUser));
+			RealVector movieRandomd = movieVector.map((double x) -> x
+					+ randomNess * (rand.nextDouble() - .5));
+			movies.put(rating.getMovieId(), movieRandomd.add(deltaMovie));
+
+			RealVector deltaUser = movieVector.mapMultiply(gradientDelta
+					* etaUser);
+			deltaUser = deltaUser.subtract(userVector.mapMultiply(lambda
+					* etaUser));
+			RealVector userRandomd = userVector.map((double x) -> x
+					+ randomNess * (rand.nextDouble() - .5));
+			users.put(rating.getUserId(), userRandomd.add(deltaUser));
 		}
 		RealVector testMovieVector = movies.get(toTrain.get(0).getMovieId());
 		System.out.println(testMovieVector);
 		RealVector testUserVector = users.get(toTrain.get(0).getUserId());
 		System.out.println(testUserVector);
-		System.out.println(testUserVector.dotProduct(testMovieVector));
+		System.out.println("interaction: "
+				+ toScale(sigmoid(testUserVector.dotProduct(testMovieVector))));
 
 	}
 

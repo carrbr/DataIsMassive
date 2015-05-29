@@ -30,25 +30,13 @@ public class Main {
 		// test model/random data/test.txt data/result.txt
 		// publish data/result.txt data/
 
-		// createNN model/NN
-		// test model/NN data/A_test data/A_test_result
-		// rmse data/A_test data/A_test_result
-		// trainNN model/NN model/NN2 data/A_test 500000
-		// test model/NN2 data/A_test data/A_test_result
-		// rmse data/A_test data/A_test_result
-		// trainNN model/NN3_1 model/NN3_2 data/training.txt 21000000
-		// trainBI model/BI1 model/BI2 data/A_test 1
 
-		/*
-		trainBI model/B0 model/B1 data/A_train 0
-		trainBI model/B1 model/B1 data/A_train 1
-		test model/B1 data/A_test data/A_test_result
-		avg is 3.600761125332697
-		starting training on biasMovie
-		starting training on biasUser
-		starting training on interaction
-		rmse data/A_test data/A_test_result
-		*/
+		// createBI model/B0
+		// trainBI model/B0 model/B1 data/training.txt 0
+		// trainBI model/B2 model/B2 data/A_train 1
+		// test model/B2 data/A_test data/A_test_result
+		// rmse data/A_test data/A_test_result
+	
 	}
 
 	private static void handleInput(String[] args) throws Exception {
