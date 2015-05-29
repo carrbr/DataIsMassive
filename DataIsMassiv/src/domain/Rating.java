@@ -23,7 +23,6 @@ public class Rating implements Serializable {
 		this(userId, movieId, dateId, (short) 0);
 	}
 
-	
 	public int getUserId() {
 		return userId;
 	}
@@ -40,16 +39,15 @@ public class Rating implements Serializable {
 		return rating;
 	}
 
-	public Rating reRate(float newRating){
+	public Rating reRate(float newRating) {
 		return new Rating(userId, movieId, dateId, newRating);
 	}
-	
+
 	@Override
 	public String toString() {
-		return userId + "," + movieId + "," + dateId + "," + getNiceFormatRating();
+		return userId + "," + movieId + "," + dateId + ","
+				+ getNiceFormatRating();
 	}
-
-	
 
 	@Override
 	public int hashCode() {
@@ -83,6 +81,6 @@ public class Rating implements Serializable {
 	}
 
 	public double getNiceFormatRating() {
-		return ((double)Math.round(rating * 10)) / 10;
+		return ((double) Math.round(rating * 10)) / 10;
 	}
 }

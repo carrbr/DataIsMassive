@@ -40,18 +40,20 @@ public class CreateMovieCollaborativeFilteringTask extends TaskCommand {
 		try {
 			oos = new ObjectOutputStream(
 					new FileOutputStream(new File(fileOut)));
-			
+
 			if (!this.backwards) {
-				oos.writeObject(new MovieCollaborativeFilteringModel(this.trainingFile, this.numSimilarMovies, 0.02, 10, 0.75));
+				oos.writeObject(new MovieCollaborativeFilteringModel(
+						this.trainingFile, this.numSimilarMovies, 0.02, 10,
+						0.75));
 			} else {
-				oos.writeObject(new MovieBackwardsCollaborativeFilteringModel(this.trainingFile, this.numSimilarMovies, 0.02, 10, 0.5));
+				oos.writeObject(new MovieBackwardsCollaborativeFilteringModel(
+						this.trainingFile, this.numSimilarMovies, 0.02, 10, 0.5));
 			}
 
 		} finally {
 			if (oos != null)
 				oos.close();
 		}
-		
 
 	}
 

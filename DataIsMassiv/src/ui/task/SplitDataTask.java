@@ -17,7 +17,8 @@ public class SplitDataTask extends TaskCommand {
 	private int mod;
 	private boolean splitByUser;
 
-	public SplitDataTask(String fileIn, String fileOut, int numOfBuckets, int mod, boolean splitByUser) {
+	public SplitDataTask(String fileIn, String fileOut, int numOfBuckets,
+			int mod, boolean splitByUser) {
 		this.fileIn = fileIn;
 		this.fileOut = fileOut;
 		this.numOfBuckets = numOfBuckets;
@@ -58,7 +59,8 @@ public class SplitDataTask extends TaskCommand {
 					+ "_test")));
 
 			if (this.splitByUser) {
-				divideByUser(ratingsIn, writerTraining, writerTest, numOfBuckets, mod);
+				divideByUser(ratingsIn, writerTraining, writerTest,
+						numOfBuckets, mod);
 			} else {
 				divide(ratingsIn, writerTraining, writerTest, numOfBuckets, mod);
 			}

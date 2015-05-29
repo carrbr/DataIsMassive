@@ -42,16 +42,17 @@ public class CreateUserCollaborativeFilteringTask extends TaskCommand {
 					new FileOutputStream(new File(fileOut)));
 
 			if (!this.backwards) {
-				oos.writeObject(new UserCollaborativeFilteringModel(this.trainingFile, this.numSimilarUsers, 0.02, 10, 0.5));
+				oos.writeObject(new UserCollaborativeFilteringModel(
+						this.trainingFile, this.numSimilarUsers, 0.02, 10, 0.5));
 			} else {
-				oos.writeObject(new UserBackwardsCollaborativeFilteringModel(this.trainingFile, this.numSimilarUsers, 0.02, 10, 0.5));
+				oos.writeObject(new UserBackwardsCollaborativeFilteringModel(
+						this.trainingFile, this.numSimilarUsers, 0.02, 10, 0.5));
 			}
 
 		} finally {
 			if (oos != null)
 				oos.close();
 		}
-		
 
 	}
 

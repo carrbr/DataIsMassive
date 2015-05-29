@@ -32,7 +32,7 @@ public class MainTaskDelegation extends TaskCommand {
 		} else if (match(args, "createUCF")) {
 			new CreateUserCollaborativeFilteringTask(reduced).exec();
 		} else if (match(args, "createMCF")) {
-				new CreateMovieCollaborativeFilteringTask(reduced).exec();
+			new CreateMovieCollaborativeFilteringTask(reduced).exec();
 		} else if (match(args, "combine")) {
 			new CombineModelTask(reduced).exec();
 		} else {

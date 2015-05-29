@@ -1,4 +1,3 @@
-
 package helper;
 
 import java.io.BufferedReader;
@@ -25,20 +24,22 @@ public class TextToRatingReader implements Closeable {
 			return null;
 		String subi[] = s.split(",");
 		if (subi.length == 5) {
-			return new SimilarityRating(Double.parseDouble(subi[0]), Integer.parseInt(subi[1]), Integer.parseInt(subi[2]),
+			return new SimilarityRating(Double.parseDouble(subi[0]),
+					Integer.parseInt(subi[1]), Integer.parseInt(subi[2]),
 					Integer.parseInt(subi[3]), Float.parseFloat(subi[4]));
 		}
 		if (subi.length == 4) {
-			return new Rating(Integer.parseInt(subi[0]), Integer.parseInt(subi[1]),
-					Integer.parseInt(subi[2]), Float.parseFloat(subi[3]));
+			return new Rating(Integer.parseInt(subi[0]),
+					Integer.parseInt(subi[1]), Integer.parseInt(subi[2]),
+					Float.parseFloat(subi[3]));
 		}
 		if (subi.length == 3) {
-			return new Rating(Integer.parseInt(subi[0]), Integer.parseInt(subi[1]),
-					Integer.parseInt(subi[2]));
+			return new Rating(Integer.parseInt(subi[0]),
+					Integer.parseInt(subi[1]), Integer.parseInt(subi[2]));
 		}
 		return null;
 	}
-	
+
 	@Override
 	public void close() throws IOException {
 		reader.close();

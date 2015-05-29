@@ -42,7 +42,7 @@ public class PublishResultTask extends TaskCommand {
 			out = new BufferedWriter(new FileWriter(new File(directory
 					+ listNum)));
 
-			removeAllBurRetainRating(in, out);
+			removeAllButRetainRating(in, out);
 
 		} finally {
 			if (in != null)
@@ -52,7 +52,7 @@ public class PublishResultTask extends TaskCommand {
 		}
 	}
 
-	private void removeAllBurRetainRating(TextToRatingReader in,
+	private void removeAllButRetainRating(TextToRatingReader in,
 			BufferedWriter out) throws IOException {
 		Rating rate = null;
 		while ((rate = in.readNext()) != null) {

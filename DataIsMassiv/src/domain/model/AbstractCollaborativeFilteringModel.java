@@ -23,14 +23,19 @@ import no.uib.cipr.matrix.Vector.Norm;
 import no.uib.cipr.matrix.sparse.SparseVector;
 import domain.Rating;
 
-public abstract class AbstractCollaborativeFilteringModel extends AbstractRatingModel {
+public abstract class AbstractCollaborativeFilteringModel extends
+		AbstractRatingModel {
 	private static final long serialVersionUID = 8557616341507027600L;
 	protected String trainingSetFile;
 	protected AbstractRatingSet trainSet;
 	protected int numSimilarElems;
-	protected ArrayList<Queue<SimilarElement>> similarElements;  // array of groups of n users similar to user at index
+	protected ArrayList<Queue<SimilarElement>> similarElements; // array of
+																// groups of n
+																// users similar
+																// to user at
+																// index
 	private BufferedWriter out;
-	
+
 	// TODO remove this later
 	private static int failCount;
 	private static int failCountNulls;
@@ -40,23 +45,26 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		failCountNulls = 0;
 		processedCount = 0;
 	}
-	
+
 	/*
 	 * params for our model
 	 */
-	private double minSim; // minimum similarity to be considered useful for predicting ratings
-	private int minCount; // must have at least this many similar elements to not hedge
-	private double pcWeight; // weighting (on a scale of 0..1) of pearson coefficient vs cosine similarity
+	private double minSim; // minimum similarity to be considered useful for
+							// predicting ratings
+	private int minCount; // must have at least this many similar elements to
+							// not hedge
+	private double pcWeight; // weighting (on a scale of 0..1) of pearson
+								// coefficient vs cosine similarity
 
-
-	public AbstractCollaborativeFilteringModel(String trainingSetFile, int n, double minSim, int minCount, double pcWeight) {
+	public AbstractCollaborativeFilteringModel(String trainingSetFile, int n,
+			double minSim, int minCount, double pcWeight) {
 		super();
 		this.trainingSetFile = trainingSetFile;
 		this.numSimilarElems = n;
 		this.minSim = minSim;
 		this.minCount = minCount;
 		this.pcWeight = pcWeight;
-		
+
 		// we will incur model construction cost immediately upon creation
 		buildModel();
 	}
@@ -75,177 +83,238 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		processedCount++;
 		try {
 			if (out == null) {
-				out = new BufferedWriter(new FileWriter(new File("data/" + getLogFileName())));
+				out = new BufferedWriter(new FileWriter(new File("data/"
+						+ getLogFileName())));
 			}
-			
+
 			Queue<SimilarElement> simElems = similarElements.get(filterById);
 			if (simElems == null || simElems.size() == 0) {
 				failCount++;
-				if (simElems == null) failCountNulls++;
-				System.out.println("num without similar elems = " + failCount + ", num null = " + failCountNulls);
-				result =  r.reRate((float) 3.0); // we don't have this user in our data so the best we can do is guess in the middle
+				if (simElems == null)
+					failCountNulls++;
+				System.out.println("num without similar elems = " + failCount
+						+ ", num null = " + failCountNulls);
+				result = r.reRate((float) 3.0); // we don't have this user in
+												// our data so the best we can
+												// do is guess in the middle
 				out.write("0,"); // no similarity
 			} else {
-				result = r.reRate((float)generateRatingFromSimilar(simElems, trainSet,
-						filterById, trainSet.getFeatureIdFromRating(r), r.getDateId(), out));
+				result = r
+						.reRate((float) generateRatingFromSimilar(simElems,
+								trainSet, filterById,
+								trainSet.getFeatureIdFromRating(r),
+								r.getDateId(), out));
 			}
 			out.write(result.toString() + "\n");
 		} catch (IOException e) {
 			System.err.println("Issue with log file writer");
 			e.printStackTrace();
 		}
-		
+
 		return result;
 
 	}
-	
-	
+
 	/**
-	 * This method generates a rating using those of the elements of the similarSet to make the prediction
-	 * This implementation computes a simple average.
-	 * @param similarSet Contains the N most similar vectors to the vector for the given filterBaseId
-	 * @param rs Rating set containing all ratings sorted by their filterById
-	 * @param filterById ID for dimension we are performing collaborative filtering based on (i.e. user in user-based filtering)
-	 * @param featureId ID in feature dimension (i.e. whatever component is represented in the vector space)
+	 * This method generates a rating using those of the elements of the
+	 * similarSet to make the prediction This implementation computes a simple
+	 * average.
+	 * 
+	 * @param similarSet
+	 *            Contains the N most similar vectors to the vector for the
+	 *            given filterBaseId
+	 * @param rs
+	 *            Rating set containing all ratings sorted by their filterById
+	 * @param filterById
+	 *            ID for dimension we are performing collaborative filtering
+	 *            based on (i.e. user in user-based filtering)
+	 * @param featureId
+	 *            ID in feature dimension (i.e. whatever component is
+	 *            represented in the vector space)
 	 * @return
 	 */
-	public double generateRatingFromSimilar(Queue<SimilarElement> similarSet, AbstractRatingSet rs, int filterById,
-			int featureId, int dateId, BufferedWriter out) {
+	public double generateRatingFromSimilar(Queue<SimilarElement> similarSet,
+			AbstractRatingSet rs, int filterById, int featureId, int dateId,
+			BufferedWriter out) {
 		int count = 0;
-		
+
 		// will use this to weight by similarity scores
 		double simTotal = 0;
-		for (SimilarElement simElem: similarSet) {
-			if (rs.getRatingValue(simElem.id, featureId) != 0  && simElem.similarity >= minSim) { // only count if it's a rating value worth using
-				simTotal += simElem.similarity; // note right now similarities can only be positive because of minSim, o.w. need to take abs()
+		for (SimilarElement simElem : similarSet) {
+			if (rs.getRatingValue(simElem.id, featureId) != 0
+					&& simElem.similarity >= minSim) { // only count if it's a
+														// rating value worth
+														// using
+				simTotal += simElem.similarity; // note right now similarities
+												// can only be positive because
+												// of minSim, o.w. need to take
+												// abs()
 			}
 		}
-		
+
 		/*
-		 * using weighted (by similarity) average of useful ratings (greating than minSim, and not unrated)
-		 * from similar elems.  Also we are norming the vectors of similar elems to the same average as the
-		 * elem that we are attemptimg to generate a rating for
+		 * using weighted (by similarity) average of useful ratings (greating
+		 * than minSim, and not unrated) from similar elems. Also we are norming
+		 * the vectors of similar elems to the same average as the elem that we
+		 * are attemptimg to generate a rating for
 		 * 
-		 * E		- similar elements, represented by some (not all!) members of similarSet
-		 * r_ei 	- rating for element e on item i, result
-		 * r_base_e	- baseline rating for element e, see computeFilterByElemBaselineRating() for details
-		 * k		- normalizing factor, 1/sum(abs(sim(e, e_prime))) for e_prime in E.  k = 1/simTotal
+		 * E - similar elements, represented by some (not all!) members of
+		 * similarSet r_ei - rating for element e on item i, result r_base_e -
+		 * baseline rating for element e, see
+		 * computeFilterByElemBaselineRating() for details k - normalizing
+		 * factor, 1/sum(abs(sim(e, e_prime))) for e_prime in E. k = 1/simTotal
 		 * 
-		 * r_ei = r_base_e + k * sum(sim(e, e_prime) * (r_e_primei - r_avg_e_prime)) for e_prime in E
-		 * 
+		 * r_ei = r_base_e + k * sum(sim(e, e_prime) * (r_e_primei -
+		 * r_avg_e_prime)) for e_prime in E
 		 */
-		double r_base_e = computeFilterByElemBaselineRating(filterById, featureId, dateId, rs);
+		double r_base_e = computeFilterByElemBaselineRating(filterById,
+				featureId, dateId, rs);
 		double result = r_base_e;
 		double r_base_e_prime = -1;
 		double sum = 0.0;
-		if (simTotal > 0) { // only rate if similar elements actually have something in common
-			for (SimilarElement simElem: similarSet) {
+		if (simTotal > 0) { // only rate if similar elements actually have
+							// something in common
+			for (SimilarElement simElem : similarSet) {
 				double r_e_primei = rs.getRatingValue(simElem.id, featureId);
-				r_base_e_prime = computeFilterByElemBaselineRating(simElem.id, featureId, dateId, rs);
-				if (r_e_primei != 0 && simElem.similarity >= minSim) { // only for elems who have rated this
-					sum += (r_e_primei - r_base_e_prime) * (simElem.similarity); // weight based on similarity
+				r_base_e_prime = computeFilterByElemBaselineRating(simElem.id,
+						featureId, dateId, rs);
+				if (r_e_primei != 0 && simElem.similarity >= minSim) { // only
+																		// for
+																		// elems
+																		// who
+																		// have
+																		// rated
+																		// this
+					sum += (r_e_primei - r_base_e_prime) * (simElem.similarity); // weight
+																					// based
+																					// on
+																					// similarity
 					count++;
 				}
 			}
 			sum /= simTotal;
-		} 
+		}
 		result += sum;
-		
-		// when we have few useful similar elems, hedge our bets and bias towards the middle
+
+		// when we have few useful similar elems, hedge our bets and bias
+		// towards the middle
 		if (count <= minCount && count > 0) {
 			result = hedgeBets(filterById, count, r_base_e, rs, result);
 		}
-		
+
 		try {
 			out.write(Double.toString(simTotal) + ",");
 		} catch (IOException e) {
 			System.err.println("Error writing to log file");
 			e.printStackTrace();
 		}
-		
+
 		result = getFlippedRatingIfNecessary(result, r_base_e);
-		result = truncateIfNecessary(result); // TODO ideally scale based on deviation instead of truncating
-		
+		result = truncateIfNecessary(result); // TODO ideally scale based on
+												// deviation instead of
+												// truncating
+
 		// TODO Remove this
 		if (result > 5.0 || result < 1.0) {
-			System.out.println("Halp: rating = " + result + " uId = " + filterById + " mId = " + featureId);
+			System.out.println("Halp: rating = " + result + " uId = "
+					+ filterById + " mId = " + featureId);
 		}
-		
+
 		return result;
 	}
-	
+
 	/**
-	 * computes the baseline rating b_xi = u + b_x + b_i, where u is the overall average rating,
-	 * b_x is the element's deviation from the average (avg_elem_x - u), and b_i is the feature's
-	 * deviation from the average (avg_feature_i - u).
+	 * computes the baseline rating b_xi = u + b_x + b_i, where u is the overall
+	 * average rating, b_x is the element's deviation from the average
+	 * (avg_elem_x - u), and b_i is the feature's deviation from the average
+	 * (avg_feature_i - u).
 	 * 
-	 * note: b_xi = u + b_x + b_i = u + (avg_elem_x - u) + (avg_feature_i - u) = avg_elem_x + avg_feature_i - u
+	 * note: b_xi = u + b_x + b_i = u + (avg_elem_x - u) + (avg_feature_i - u) =
+	 * avg_elem_x + avg_feature_i - u
 	 * 
-	 * now using b_x(t) and b_i(t) of the form:
-	 * 	b_x(t) = b_x + b_xt = (avg_elem_x - u) + b_xt
+	 * now using b_x(t) and b_i(t) of the form: b_x(t) = b_x + b_xt =
+	 * (avg_elem_x - u) + b_xt
 	 * 
 	 * @param filterById
 	 * @param rs
 	 * @return
 	 */
-	private double computeFilterByElemBaselineRating(int filterById, int featureId, int dateId, AbstractRatingSet rs) {
-//		double result = rs.getMeanForFilterById(filterById);
-//		result += rs.getTemporalMeanForFilterById(filterById, dateId);
-//		result += rs.getMeanForFeatureId(featureId);
-//		result += rs.getTemporalMeanForFeatureId(featureId, dateId);
-//		result -= 3 * rs.getOverallMeanRating();
-		
+	private double computeFilterByElemBaselineRating(int filterById,
+			int featureId, int dateId, AbstractRatingSet rs) {
+		// double result = rs.getMeanForFilterById(filterById);
+		// result += rs.getTemporalMeanForFilterById(filterById, dateId);
+		// result += rs.getMeanForFeatureId(featureId);
+		// result += rs.getTemporalMeanForFeatureId(featureId, dateId);
+		// result -= 3 * rs.getOverallMeanRating();
+
 		double result = rs.getTemporalMeanForFilterById(filterById, dateId);
 		result += rs.getTemporalMeanForFeatureId(featureId, dateId);
 		result -= rs.getOverallMeanRating();
-		
+
 		return result;
 	}
-	
+
 	/**
-	 * This function moves the resulting rating prediction towards the filterByElem's average
+	 * This function moves the resulting rating prediction towards the
+	 * filterByElem's average
 	 */
-	private double hedgeBets(int filterById, int count, double baseline, AbstractRatingSet rs, double prevResult) {
+	private double hedgeBets(int filterById, int count, double baseline,
+			AbstractRatingSet rs, double prevResult) {
 		double result = 0.0;
 		double hedgeWeight = minCount * 1.5 + 1;
 		double hedgeTotal = 2 * minCount;
-		//double filterByElemAvg = rs.getMeanForFilterById(filterById);
+		// double filterByElemAvg = rs.getMeanForFilterById(filterById);
 		double filterByElemAvg = baseline;
-		
+
 		hedgeWeight -= count;
-//		System.out.println("hedging... count = " + count + " prevResult = " + prevResult + " resultWeight = " + ((hedgeTotal - hedgeWeight) / hedgeTotal)
-//				+ " hedgeWeight = " + (hedgeWeight / hedgeTotal) + " avg = " + filterByElemAvg);
-		result = filterByElemAvg * (hedgeWeight / hedgeTotal) + prevResult * ((hedgeTotal - hedgeWeight) / hedgeTotal);
-		
+		// System.out.println("hedging... count = " + count + " prevResult = " +
+		// prevResult + " resultWeight = " + ((hedgeTotal - hedgeWeight) /
+		// hedgeTotal)
+		// + " hedgeWeight = " + (hedgeWeight / hedgeTotal) + " avg = " +
+		// filterByElemAvg);
+		result = filterByElemAvg * (hedgeWeight / hedgeTotal) + prevResult
+				* ((hedgeTotal - hedgeWeight) / hedgeTotal);
+
 		return result;
 	}
-		
+
 	protected void buildModel() {
 		long start = System.currentTimeMillis();
 		long endTask = 0;
 		long startTask = 0;
-	
+
 		System.out.println("Building Model...\n");
 		System.out.println("Building Rating Set...");
 		startTask = System.currentTimeMillis();
 		this.trainSet = buildRatingSet(this.trainingSetFile);
 		this.trainSet.trimToSize();
 		endTask = System.currentTimeMillis();
-		System.out.println("Rating Set Built in " + (endTask - startTask) / 1000 + "s\n");
-		
-		int numFeatureElems = trainSet.getMaxFeatureId() + 1; // Note: this will work in most cases, but it really is just a heuristic.  If we have problems this will need to change
+		System.out.println("Rating Set Built in " + (endTask - startTask)
+				/ 1000 + "s\n");
+
+		int numFeatureElems = trainSet.getMaxFeatureId() + 1; // Note: this will
+																// work in most
+																// cases, but it
+																// really is
+																// just a
+																// heuristic. If
+																// we have
+																// problems this
+																// will need to
+																// change
 		int numFilterByElems = trainSet.getMaxFilterById() + 1;
-		
+
 		System.out.println("Finding Similar Elements...");
 		startTask = System.currentTimeMillis();
 		this.similarElements = initSimFilterByElemArrayList(numFilterByElems);
-		
+
 		// build LSH table for finding similar users
 		System.out.println("Building LSH Table...");
 		startTask = System.currentTimeMillis();
 		LSH lshTable = buildLSHTable(numFilterByElems, numFeatureElems);
 		endTask = System.currentTimeMillis();
-		System.out.println("LSH Table built in " + (endTask - startTask) / 1000 + "s\n");
+		System.out.println("LSH Table built in " + (endTask - startTask) / 1000
+				+ "s\n");
 
 		// we need to find our similar elems for each elem in the test set
 		System.out.println("Finding Similar Elems...");
@@ -257,25 +326,32 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		for (int i = 0; i < numFilterByElems; i++) {
 			if (processedCount % 1000 == 0) {
 				endTask = System.currentTimeMillis();
-				System.out.println("Processed " + processedCount + " elems. " + (endTask - startTask) / 1000 + "s elapsed");
+				System.out.println("Processed " + processedCount + " elems. "
+						+ (endTask - startTask) / 1000 + "s elapsed");
 			}
 			processedCount++;
-			
-			filterByElemRatingVec = trainSet.getFilterByElemRatingsAsNormedVector(i); // vector to use as query
+
+			filterByElemRatingVec = trainSet
+					.getFilterByElemRatingsAsNormedVector(i); // vector to use
+																// as query
 			if (filterByElemRatingVec == null) { // not in dataset, skip
 				continue;
 			}
-			simElemCandidates = lshTable.query(filterByElemRatingVec, numSimilarElems);
+			simElemCandidates = lshTable.query(filterByElemRatingVec,
+					numSimilarElems);
 			// evaluate the candidates to find the best N
-			simElems = findNSimilarElems(numSimilarElems, trainSet, i, simElemCandidates, numFeatureElems);
-			this.similarElements.add(Integer.parseInt(filterByElemRatingVec.getKey()), simElems);
+			simElems = findNSimilarElems(numSimilarElems, trainSet, i,
+					simElemCandidates, numFeatureElems);
+			this.similarElements.add(
+					Integer.parseInt(filterByElemRatingVec.getKey()), simElems);
 		}
 		lshTable = null;
 		endTask = System.currentTimeMillis();
-		System.out.println("Similar elems found  in " + (endTask - startTask) / 1000 + "s\n");
+		System.out.println("Similar elems found  in " + (endTask - startTask)
+				/ 1000 + "s\n");
 		System.out.println("Model Built in " + (endTask - start) / 1000 + "s");
 	}
-	
+
 	private LSH buildLSHTable(int numVecs, int dimensions) {
 		HashFamily hf = new CosineHashFamily(dimensions);
 		Index index = Index.deserialize(hf, 10, 10);
@@ -289,24 +365,26 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			}
 			index.index(v);
 		}
-		
+
 		return new LSH(index, hf);
 	}
-	
-	private ArrayList<Queue<SimilarElement>> initSimFilterByElemArrayList(int size) {
-		ArrayList<Queue<SimilarElement>> arrList = new ArrayList<Queue<SimilarElement>>(size);
-		for(; size > 0; size --) {
+
+	private ArrayList<Queue<SimilarElement>> initSimFilterByElemArrayList(
+			int size) {
+		ArrayList<Queue<SimilarElement>> arrList = new ArrayList<Queue<SimilarElement>>(
+				size);
+		for (; size > 0; size--) {
 			arrList.add(null);
 		}
 		return arrList;
 	}
-	
+
 	private AbstractRatingSet buildRatingSet(String fName) {
 		AbstractRatingSet rs = generateRatingSet();
-		
+
 		try {
 			TextToRatingReader ratingReader = new TextToRatingReader(fName);
-			
+
 			// build up our rating set
 			Rating rating = null;
 			while (true) {
@@ -317,42 +395,51 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 					}
 					rs.addFilterByElemRating(rating);
 				} catch (IOException e) {
-					System.err.println("CollaborativeFilteringModel.buildModel: Error reading ratings");
+					System.err
+							.println("CollaborativeFilteringModel.buildModel: Error reading ratings");
 					e.printStackTrace();
 					System.exit(1);
 				}
 			}
 			ratingReader.close();
 		} catch (FileNotFoundException e) {
-			System.err.println("CollaborativeFilteringModel.buildModel: Failed to open training set file, at path: " + fName);
+			System.err
+					.println("CollaborativeFilteringModel.buildModel: Failed to open training set file, at path: "
+							+ fName);
 			e.printStackTrace();
 			System.exit(1);
 		} catch (IOException e) {
-			System.err.println("CollaborativeFilteringModel.buildModel: Failed to close properly");
+			System.err
+					.println("CollaborativeFilteringModel.buildModel: Failed to close properly");
 			e.printStackTrace();
 			System.exit(1);
 		}
-		
+
 		return rs;
 	}
-	
-	private Queue<SimilarElement> findNSimilarElems(int n, AbstractRatingSet rs, int queryFilterById, List<String> candidates, int numFeatureElems) {
+
+	private Queue<SimilarElement> findNSimilarElems(int n,
+			AbstractRatingSet rs, int queryFilterById, List<String> candidates,
+			int numFeatureElems) {
 		Queue<SimilarElement> simElems = new PriorityQueue<SimilarElement>();
-		
+
 		int candidateId = -1;
-		for (String candidate: candidates) {
+		for (String candidate : candidates) {
 			candidateId = Integer.parseInt(candidate);
-			
+
 			if (!rs.containsFilterById(candidateId)) {
 				continue; // no elem by this id in dataset
 			}
-			if (queryFilterById != candidateId) { // ensure we don't count self as similar user
-				double currentSim = findSimilarity(queryFilterById, candidateId, rs);
+			if (queryFilterById != candidateId) { // ensure we don't count self
+													// as similar user
+				double currentSim = findSimilarity(queryFilterById,
+						candidateId, rs);
 				// first we fill up the PriorityQueue
 				if (simElems.size() < n && currentSim > this.minSim) {
 					simElems.add(new SimilarElement(candidateId, currentSim));
-				} else { 
-					if (currentSim > this.minSim && currentSim > simElems.peek().similarity) {
+				} else {
+					if (currentSim > this.minSim
+							&& currentSim > simElems.peek().similarity) {
 						// add this elem and drop current least similar elem
 						simElems.poll();
 						simElems.add(new SimilarElement(candidateId, currentSim));
@@ -362,13 +449,16 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		}
 		return simElems;
 	}
-	
+
 	/**
-	 * This method computes a similarity value between two vectors.  This particular implementation
-	 * uses the cosine similarity, cos(u, v) = (u * v)/(||u|| * ||v||)
+	 * This method computes a similarity value between two vectors. This
+	 * particular implementation uses the cosine similarity, cos(u, v) = (u *
+	 * v)/(||u|| * ||v||)
 	 * 
-	 * @param u user rating vector
-	 * @param v second user rating vector to compute similarity to
+	 * @param u
+	 *            user rating vector
+	 * @param v
+	 *            second user rating vector to compute similarity to
 	 * @return value for the similarity
 	 */
 	private double findSimilarity(int uId, int vId, AbstractRatingSet rs) {
@@ -376,7 +466,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		double cs = cosineSimilarity(uId, vId, rs);
 		return getFlipedRatingIfNeccesary(cs * (1 - pcWeight) + pc * pcWeight);
 	}
-	
+
 	private double cosineSimilarity(int uId, int vId, AbstractRatingSet rs) {
 		SparseVector u = rs.getNormedSparseVectorFromRatingList(uId);
 		SparseVector v = rs.getNormedSparseVectorFromRatingList(vId);
@@ -384,18 +474,19 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		double frobeniusNormU = u.norm(Norm.TwoRobust);
 		double frobeniusNormV = v.norm(Norm.TwoRobust);
 		double sim = 0.0;
-		if (frobeniusNormU != 0 && frobeniusNormV != 0) { // don't want to divide by zero
+		if (frobeniusNormU != 0 && frobeniusNormV != 0) { // don't want to
+															// divide by zero
 			sim = dotProdUV / (frobeniusNormU * frobeniusNormV);
 		}
 		return sim;
 	}
-	
+
 	private double pearsonCorrelation(int uId, int vId, AbstractRatingSet rs) {
 		ArrayList<Rating> u = rs.getFilterByElemRatings(uId);
 		double uAvg = rs.getMeanForFilterById(uId);
 		ArrayList<Rating> v = rs.getFilterByElemRatings(vId);
 		double vAvg = rs.getMeanForFilterById(vId);
-		
+
 		double numerator = 0.0;
 		double denominator = 0.0;
 		int i = 0, j = 0;
@@ -406,11 +497,14 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		int vFeature = rs.getFeatureIdFromRating(vRate);
 		while (true) { // iterate until no more mutually rated items
 			if (uFeature == vFeature) { // both have rated same item
-				numerator += (vRate.getRating() - vAvg) * (uRate.getRating() - uAvg);
-				uSumSquare += (uRate.getRating() - uAvg) * (uRate.getRating() - uAvg);
-				vSumSquare += (vRate.getRating() - vAvg) * (vRate.getRating() - vAvg);
+				numerator += (vRate.getRating() - vAvg)
+						* (uRate.getRating() - uAvg);
+				uSumSquare += (uRate.getRating() - uAvg)
+						* (uRate.getRating() - uAvg);
+				vSumSquare += (vRate.getRating() - vAvg)
+						* (vRate.getRating() - vAvg);
 				if (j < v.size() && i < u.size()) {
-					vRate = v.get(j++);	
+					vRate = v.get(j++);
 					vFeature = rs.getFeatureIdFromRating(vRate);
 					uRate = u.get(i++);
 					uFeature = rs.getFeatureIdFromRating(uRate);
@@ -426,26 +520,26 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			} else {
 				break; // exhausted all mutual ratings
 			}
-			
-			
+
 		}
 		denominator = Math.sqrt(uSumSquare * vSumSquare);
-				
-		double result = 0.0; // if we would have to divide by zero, just return zero anyways
+
+		double result = 0.0; // if we would have to divide by zero, just return
+								// zero anyways
 		if (denominator != 0) {
 			result = numerator / denominator;
 		}
 		return result;
 	}
-	
+
 	protected double getFlipedRatingIfNeccesary(double sim) {
 		return sim;
 	}
-	
+
 	protected double getFlippedRatingIfNecessary(double result, double avg) {
 		return result;
 	}
-	
+
 	private double truncateIfNecessary(double result) {
 		if (result > 5.0) {
 			result = 5.0;
@@ -454,7 +548,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		}
 		return result;
 	}
-	
+
 	@Override
 	public void close() {
 		if (out != null) {
@@ -466,7 +560,8 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			}
 		}
 	}
-	
+
 	protected abstract AbstractRatingSet generateRatingSet();
+
 	protected abstract String getLogFileName();
 }

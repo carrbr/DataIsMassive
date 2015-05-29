@@ -108,12 +108,12 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 			movies.remove(movieId);
 			rwlMovies.writeLock().unlock();
 		}
-		
+
 		if (card.fakeInput > random.nextDouble()) {
 			rwlMovies.readLock().lock();
 			boolean exits = !movies.containsKey(movieId);
 			rwlMovies.readLock().unlock();
-			if(exits){
+			if (exits) {
 				rwlMovies.writeLock().lock();
 				movies.put(movieId, MatrixUtils.createRealVector(newMovieVec));
 				rwlMovies.writeLock().unlock();
@@ -134,7 +134,7 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 			rwlUser.readLock().lock();
 			boolean exits = !user.containsKey(userId);
 			rwlUser.readLock().unlock();
-			if(exits){
+			if (exits) {
 				rwlUser.writeLock().lock();
 				movies.put(userId, MatrixUtils.createRealVector(newUserVec));
 				rwlUser.writeLock().unlock();
@@ -320,12 +320,12 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 
 		int nThreads = 4;
 		int nGradientGroup = 7;
-		
+
 		Semaphore barrierLearner = new Semaphore(0);
 		Semaphore updateWriteBlock = new Semaphore(0);
 
 		ArrayList<LearningThread> threads = new ArrayList<>();
-		
+
 		for (int i = 0; i < nThreads; i++) {
 			threads.add(new LearningThread(nGradientGroup, barrierLearner,
 					updateWriteBlock, howToLearn, trainSet));
@@ -355,8 +355,8 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 				if (timeSinceLastUpdate > 10000) {
 					timeLastUpdate = System.currentTimeMillis();
 					System.out.println(((double) totalDoneLearnCycles) / counts
-							* 100 + " % learn cycles since " + secondsSinceStart
-							+ " seconds ago");
+							* 100 + " % learn cycles since "
+							+ secondsSinceStart + " seconds ago");
 				}
 
 			} catch (InterruptedException e) {
@@ -373,7 +373,7 @@ public class NeuronInputBackModel extends AbstractRatingModel implements
 		}
 
 		System.out.println("Done after: "
-				+ ((double) System.currentTimeMillis()- timeStart)/1000.0 
+				+ ((double) System.currentTimeMillis() - timeStart) / 1000.0
 				+ " seconds");
 
 	}
