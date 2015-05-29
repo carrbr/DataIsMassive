@@ -87,7 +87,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 				out.write("0,"); // no similarity
 			} else {
 				result = r.reRate((float)generateRatingFromSimilar(simElems, trainSet,
-						filterById, trainSet.getFeatureIdFromRating(r), out));
+						filterById, trainSet.getFeatureIdFromRating(r), r.getDateId(), out));
 			}
 			out.write(result.toString() + "\n");
 		} catch (IOException e) {
@@ -109,7 +109,8 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	 * @param featureId ID in feature dimension (i.e. whatever component is represented in the vector space)
 	 * @return
 	 */
-	public double generateRatingFromSimilar(Queue<SimilarElement> similarSet, AbstractRatingSet rs, int filterById, int featureId, BufferedWriter out) {
+	public double generateRatingFromSimilar(Queue<SimilarElement> similarSet, AbstractRatingSet rs, int filterById,
+			int featureId, int dateId, BufferedWriter out) {
 		int count = 0;
 		
 		// will use this to weight by similarity scores
@@ -133,14 +134,14 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		 * r_ei = r_base_e + k * sum(sim(e, e_prime) * (r_e_primei - r_avg_e_prime)) for e_prime in E
 		 * 
 		 */
-		double r_base_e = computeFilterByElemBaselineRating(filterById, featureId, rs);
+		double r_base_e = computeFilterByElemBaselineRating(filterById, featureId, dateId, rs);
 		double result = r_base_e;
 		double r_base_e_prime = -1;
 		double sum = 0.0;
 		if (simTotal > 0) { // only rate if similar elements actually have something in common
 			for (SimilarElement simElem: similarSet) {
 				double r_e_primei = rs.getRatingValue(simElem.id, featureId);
-				r_base_e_prime = computeFilterByElemBaselineRating(simElem.id, featureId, rs);
+				r_base_e_prime = computeFilterByElemBaselineRating(simElem.id, featureId, dateId, rs);
 				if (r_e_primei != 0 && simElem.similarity >= minSim) { // only for elems who have rated this
 					sum += (r_e_primei - r_base_e_prime) * (simElem.similarity); // weight based on similarity
 					//System.out.println("\tratingValue = " + ratingValue + ", weight = " + (simUser.similarity / simTotal) + ", similarity = " + simUser.similarity);
@@ -181,14 +182,19 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	 * 
 	 * note: b_xi = u + b_x + b_i = u + (avg_elem_x - u) + (avg_feature_i - u) = avg_elem_x + avg_feature_i - u
 	 * 
+	 * now using b_x(t) and b_i(t) of the form:
+	 * 	b_x(t) = b_x + b_xt = (avg_elem_x - u) + b_xt
+	 * 
 	 * @param filterById
 	 * @param rs
 	 * @return
 	 */
-	private double computeFilterByElemBaselineRating(int filterById, int featureId, AbstractRatingSet rs) {
+	private double computeFilterByElemBaselineRating(int filterById, int featureId, int dateId, AbstractRatingSet rs) {
 		double result = rs.getMeanForFilterById(filterById);
+		result += rs.getTemporalMeanForFilterById(filterById, dateId);
 		result += rs.getMeanForFeatureId(featureId);
-		result -= rs.getOverallMeanRating();;
+		result -= rs.getOverallMeanRating();
+		result += rs.getTemporalMeanForFeatureId(featureId, dateId);
 		return result;
 	}
 	
@@ -218,6 +224,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		System.out.println("Building Rating Set...");
 		startTask = System.currentTimeMillis();
 		this.trainSet = buildRatingSet(this.trainingSetFile);
+		this.trainSet.trimToSize();
 		endTask = System.currentTimeMillis();
 		System.out.println("Rating Set Built in " + (endTask - startTask) / 1000 + "s\n");
 		
@@ -235,7 +242,6 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		endTask = System.currentTimeMillis();
 		System.out.println("LSH Table built in " + (endTask - startTask) / 1000 + "s\n");
 
-		
 		// we need to find our similar elems for each elem in the test set
 		System.out.println("Finding Similar Elems...");
 		startTask = System.currentTimeMillis();
@@ -259,6 +265,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 			simElems = findNSimilarElems(numSimilarElems, trainSet, i, simElemCandidates, numFeatureElems);
 			this.similarElements.add(Integer.parseInt(filterByElemRatingVec.getKey()), simElems);
 		}
+		lshTable = null;
 		endTask = System.currentTimeMillis();
 		System.out.println("Similar elems found  in " + (endTask - startTask) / 1000 + "s\n");
 		System.out.println("Model Built in " + (endTask - start) / 1000 + "s");
