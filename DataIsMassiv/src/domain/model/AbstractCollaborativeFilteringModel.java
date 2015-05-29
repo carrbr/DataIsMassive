@@ -144,7 +144,6 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 				r_base_e_prime = computeFilterByElemBaselineRating(simElem.id, featureId, dateId, rs);
 				if (r_e_primei != 0 && simElem.similarity >= minSim) { // only for elems who have rated this
 					sum += (r_e_primei - r_base_e_prime) * (simElem.similarity); // weight based on similarity
-					//System.out.println("\tratingValue = " + ratingValue + ", weight = " + (simUser.similarity / simTotal) + ", similarity = " + simUser.similarity);
 					count++;
 				}
 			}
@@ -154,7 +153,7 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 		
 		// when we have few useful similar elems, hedge our bets and bias towards the middle
 		if (count <= minCount && count > 0) {
-			result = hedgeBets(filterById, count, rs, result);
+			result = hedgeBets(filterById, count, r_base_e, rs, result);
 		}
 		
 		try {
@@ -190,22 +189,28 @@ public abstract class AbstractCollaborativeFilteringModel extends AbstractRating
 	 * @return
 	 */
 	private double computeFilterByElemBaselineRating(int filterById, int featureId, int dateId, AbstractRatingSet rs) {
-		double result = rs.getMeanForFilterById(filterById);
-		result += rs.getTemporalMeanForFilterById(filterById, dateId);
-		result += rs.getMeanForFeatureId(featureId);
-		result -= rs.getOverallMeanRating();
+//		double result = rs.getMeanForFilterById(filterById);
+//		result += rs.getTemporalMeanForFilterById(filterById, dateId);
+//		result += rs.getMeanForFeatureId(featureId);
+//		result += rs.getTemporalMeanForFeatureId(featureId, dateId);
+//		result -= 3 * rs.getOverallMeanRating();
+		
+		double result = rs.getTemporalMeanForFilterById(filterById, dateId);
 		result += rs.getTemporalMeanForFeatureId(featureId, dateId);
+		result -= rs.getOverallMeanRating();
+		
 		return result;
 	}
 	
 	/**
 	 * This function moves the resulting rating prediction towards the filterByElem's average
 	 */
-	private double hedgeBets(int filterById, int count, AbstractRatingSet rs, double prevResult) {
+	private double hedgeBets(int filterById, int count, double baseline, AbstractRatingSet rs, double prevResult) {
 		double result = 0.0;
 		double hedgeWeight = minCount * 1.5 + 1;
 		double hedgeTotal = 2 * minCount;
-		double filterByElemAvg = rs.getMeanForFilterById(filterById);
+		//double filterByElemAvg = rs.getMeanForFilterById(filterById);
+		double filterByElemAvg = baseline;
 		
 		hedgeWeight -= count;
 //		System.out.println("hedging... count = " + count + " prevResult = " + prevResult + " resultWeight = " + ((hedgeTotal - hedgeWeight) / hedgeTotal)
