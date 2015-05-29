@@ -13,8 +13,8 @@ import domain.Rating;
 public class Interaction implements DelatAccess, Serializable {
 	private static final long serialVersionUID = 1L;
 	private static double etaMovie = .05;
-	private static double etaUser = .1;
-	private static double lambda = .01;
+	private static double etaUser = .15;
+	private static double lambda = .0001;
 	private int featureSize = 50;
 	private HashMap<Integer, RealVector> movies = new HashMap<>();
 	private HashMap<Integer, RealVector> users = new HashMap<>();

@@ -29,8 +29,11 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 	}
 
 	public void train(List<Rating> toTrain) {
+		System.out.println("Calculate avg:");
 		base.train(toTrain);
+		System.out.println("Calculate Bias movie(t):");
 		movie.train(toTrain, base);
+		System.out.println("Calculate Bias user(t):");
 		user.train(toTrain, base);
 		interaction.train(toTrain, base, movie, user, .05);
 	}
@@ -41,7 +44,7 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 			Random rand = new Random();
 			while (rlist.size() < toTrain.size())
 				rlist.add(toTrain.get(rand.nextInt(toTrain.size())));
-			interaction.train(rlist, base, movie, user, 0);
+			interaction.train(rlist, base, movie, user, 0.002);
 
 		}
 
