@@ -44,7 +44,7 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 			Random rand = new Random();
 			while (rlist.size() < toTrain.size())
 				rlist.add(toTrain.get(rand.nextInt(toTrain.size())));
-			interaction.train(rlist, base, movie, user, 0.002);
+			interaction.train(rlist, base, movie, user, 0.001);
 
 		}
 
