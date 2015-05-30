@@ -9,13 +9,18 @@ import domain.model.BiasInteractionModel;
 public class CreateBiasInteractionTask extends TaskCommand {
 
 	private String fileOut;
+	private int featureSize;
 
 	public CreateBiasInteractionTask(String[] args) {
 		super(args);
 
-		if (!needsHelp && args.length == 1) {
+		if (!needsHelp && (args.length == 1 || args.length == 2)) {
 
 			this.fileOut = args[0];
+			if (args.length == 2)
+				this.featureSize = Integer.parseInt(args[1]);
+			else
+				this.featureSize = 50;
 		}
 	}
 
@@ -30,8 +35,10 @@ public class CreateBiasInteractionTask extends TaskCommand {
 			oos = new ObjectOutputStream(
 					new FileOutputStream(new File(fileOut)));
 
-			oos.writeObject(new BiasInteractionModel());
-			System.out.println("new "+ BiasInteractionModel.class.getCanonicalName() + " created");
+			oos.writeObject(new BiasInteractionModel(featureSize));
+			System.out.println("new "
+					+ BiasInteractionModel.class.getCanonicalName()
+					+ " created");
 
 		} finally {
 			if (oos != null)

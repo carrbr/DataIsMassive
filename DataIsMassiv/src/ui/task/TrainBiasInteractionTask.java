@@ -21,16 +21,21 @@ public class TrainBiasInteractionTask extends TaskCommand {
 	private String fileOut;
 	private String fileTrainSet;
 	private int mode;
+	private double heat;
 
 	public TrainBiasInteractionTask(String[] args) {
 		super(args);
 
-		if (!needsHelp & args.length == 4) {
+		if (!needsHelp & (args.length == 4 || args.length == 5)) {
 			this.fileIn = args[0];
 			this.fileOut = args[1];
 			this.fileTrainSet = args[2];
 			this.mode = Integer.parseInt(args[3]);
-		}else{
+			if (mode == 1)
+				this.heat = Double.parseDouble(args[4]);
+			else
+				this.heat = 0;
+		} else {
 			needsHelp = true;
 		}
 	}
@@ -42,10 +47,10 @@ public class TrainBiasInteractionTask extends TaskCommand {
 		BiasInteractionModel model = readInModel(fileIn);
 		List<Rating> trainSet = readInTrainSet(fileTrainSet);
 
-		if(mode == 0)
+		if (mode == 0)
 			model.train(trainSet);
-		if(mode == 1)
-			model.trainNN(trainSet);
+		if (mode == 1)
+			model.trainNN(trainSet, heat);
 
 		writeOutModel(fileOut, model);
 	}
@@ -83,6 +88,14 @@ public class TrainBiasInteractionTask extends TaskCommand {
 				new File(fileIn)))) {
 			return (BiasInteractionModel) ois.readObject();
 		}
+	}
+
+	@Override
+	public void writeHelp() {
+		System.out.println("Trains Latent Factor Model");
+		System.out.println("trainBI modelIn modelOut trainingData mode [heat]");
+		System.out.println("mode: 0 learn all biases, 1 train Features");
+		System.out.println("heat: 1.0 - 0.0: default 0.0 used for training features");
 	}
 
 }

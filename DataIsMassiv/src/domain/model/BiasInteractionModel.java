@@ -7,6 +7,7 @@ import java.util.Random;
 
 import domain.DataMonitor;
 import domain.Rating;
+import domain.model.Interaction.LearningSpecs;
 
 public class BiasInteractionModel extends AbstractRatingModel implements
 		DelatAccess, Serializable {
@@ -18,11 +19,11 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 	private final Interaction interaction;
 	private transient DataMonitor monitor = null;
 
-	public BiasInteractionModel() {
+	public BiasInteractionModel(int featureSize) {
 		base = new BaseLearner();
 		movie = new MovieInTime();
 		user = new UserInTime();
-		interaction = new Interaction(818, 5000);
+		interaction = new Interaction(818, 5000, featureSize);
 	}
 
 	@Override
@@ -37,19 +38,41 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 		movie.train(toTrain, base);
 		System.out.println("Calculate Bias user(t):");
 		user.train(toTrain, base);
-		interaction.train(toTrain, base, movie, user, .05);
+		LearningSpecs specs = new LearningSpecs();
+		specs.etaMovie = .7;
+		specs.etaUser = .15;
+		specs.lambda = .001;
+		specs.randomNess = .04;
+		interaction.train(toTrain, base, movie, user, specs);
 	}
 
-	public void trainNN(List<Rating> toTrain) {
+	public void trainNN(List<Rating> toTrain, double heat) {
 		for (int i = 0; i < 10; i++) {
-			ArrayList<Rating> rlist = new ArrayList<>(toTrain.size());
-			Random rand = new Random();
-			while (rlist.size() < toTrain.size())
-				rlist.add(toTrain.get(rand.nextInt(toTrain.size())));
-			interaction.train(rlist, base, movie, user, 0.00001);
+			ArrayList<Rating> rlist = shuffleNewTraingSet(toTrain);
+
+			LearningSpecs specsOnHeat = genereateSpecsOnHeat(heat);
+
+			interaction.train(rlist, base, movie, user, specsOnHeat);
 
 		}
 
+	}
+
+	private ArrayList<Rating> shuffleNewTraingSet(List<Rating> toTrain) {
+		ArrayList<Rating> rlist = new ArrayList<>(toTrain.size());
+		Random rand = new Random();
+		while (rlist.size() < toTrain.size())
+			rlist.add(toTrain.get(rand.nextInt(toTrain.size())));
+		return rlist;
+	}
+
+	private LearningSpecs genereateSpecsOnHeat(double heat) {
+		LearningSpecs specs = new LearningSpecs();
+		specs.etaMovie = .01 + heat * .05;
+		specs.etaUser = .05 + heat * .1;
+		specs.lambda = .00001;
+		specs.randomNess = 0 + heat * 0.0001;
+		return specs;
 	}
 
 	private double bound(double d) {
@@ -62,11 +85,12 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 		double baseP = base.getDelta(rating);
 		double movieP = movie.getDelta(rating);
 		double userP = user.getDelta(rating);
-		double d = baseP + movieP + userP +  interactionPrediction;
+		double d = baseP + movieP + userP + interactionPrediction;
 
 		if (monitor != null && rating.getRating() >= 1) {
 			monitor.reportInteraction(rating.getDateId(),
-					interactionPrediction, rating.getRating()-baseP -movieP- userP);
+					interactionPrediction, rating.getRating() - baseP - movieP
+							- userP);
 		}
 
 		return bound(d);
