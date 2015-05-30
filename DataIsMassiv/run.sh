@@ -49,7 +49,8 @@ function calculate_rmses() {
 function combine_results() {
     echo
     echo "generating aggregate result file: data/combine_result.txt"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar combine data/combine_result.txt data/UCF.log data/MCF.log data/BMCF.log data/BUCF.log
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar combine sim data/cf_result.txt data/UCF.log data/MCF.log data/BMCF.log data/BUCF.log
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar combine nosim data/combine_result.txt data/cf_result.txt data/result.txt
     echo "RMSE for combined result (ignore this value if running on test.txt):"
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/combine_result.txt
     echo
@@ -58,7 +59,7 @@ function combine_results() {
 function publish() {
     echo
     echo "publishing results to data/student_id_list.txt"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar publish data/combine_result data/
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar publish data/combine_result.txt data/
     echo
 }
 

@@ -5,6 +5,7 @@ import helper.TextToRatingReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Queue;
@@ -16,13 +17,15 @@ public class CombineModelTask extends TaskCommand {
 
 	private String[] modelResultFiles;
 	private String resultFile;
+	private boolean useSim;
 	private float weight;
 	ArrayList<Rating> ratings;
 	Queue<Rating> potentialTroubleRatings;
 
-	public CombineModelTask(String resultFile, String[] modelResultFiles) {
+	public CombineModelTask(String resultFile, boolean sim, String[] modelResultFiles) {
 		this.modelResultFiles = modelResultFiles;
 		this.resultFile = resultFile;
+		this.useSim = sim;
 		this.weight = (float) (1.0 / modelResultFiles.length);
 		this.ratings = new ArrayList<Rating>();
 		this.potentialTroubleRatings = new ArrayDeque<Rating>();
@@ -32,11 +35,18 @@ public class CombineModelTask extends TaskCommand {
 	public CombineModelTask(String[] args) {
 		super(args);
 
-		if (!needsHelp && args.length >= 2) {
-			this.resultFile = args[0];
-			this.modelResultFiles = new String[args.length - 1];
-			for (int i = 1; i < args.length; i++) {
-				this.modelResultFiles[i - 1] = args[i];
+		if (!needsHelp && args.length >= 3) {
+			if (args[0].equals("sim")) {
+				useSim = true;
+			} else if (!args[0].equals("nosim")) {
+				System.err.println("bad arg in combine task");
+			} else {
+				useSim = false;
+			}
+			this.resultFile = args[1];
+			this.modelResultFiles = new String[args.length - 2];
+			for (int i = 2; i < args.length; i++) {
+				this.modelResultFiles[i - 2] = args[i];
 			}
 			this.weight = (float) (1.0 / modelResultFiles.length);
 			this.ratings = new ArrayList<Rating>();
@@ -48,7 +58,18 @@ public class CombineModelTask extends TaskCommand {
 	public void exec() throws Exception {
 		if (writeHelpIfNeeded())
 			return;
-
+		try {
+		if (useSim) {
+			combineUsingSim();
+		} else {
+			combineNoSim();
+		}
+		} catch (IOException e) {
+			
+		}
+	}
+	
+	private void combineUsingSim() throws IOException {
 		SimilarityRating r = null;
 		SimilarityRating rPrev = null;
 		double rSim = -1.0;
@@ -76,7 +97,12 @@ public class CombineModelTask extends TaskCommand {
 
 			} finally {
 				if (in != null)
-					in.close();
+					try {
+						in.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 			}
 		}
 		try {
@@ -97,7 +123,47 @@ public class CombineModelTask extends TaskCommand {
 			if (out != null)
 				out.close();
 		}
+	}
+	
+	private void combineNoSim() throws IOException {
+		Rating r = null;
+		Rating rPrev = null;
+		TextToRatingReader in = null;
+		BufferedWriter out = null;
 
+		for (int i = 0; i < modelResultFiles.length; i++) {
+			try {
+				int count = 0;
+				in = new TextToRatingReader(modelResultFiles[i]);
+				while ((r = in.readNext()) != null) {
+					if (i != 0) {
+						rPrev = ratings.get(count);
+						ratings.set(count, rPrev.reRate(weight * r.getRating() + rPrev.getRating()));
+						count++;
+					} else { // first iteration, need to fill the queue
+						ratings.add(ratings.size(), new Rating(r.getUserId(), r
+								.getMovieId(), r.getDateId(), weight * r.getRating()));
+					}
+				}
+
+			} finally {
+				if (in != null)
+					in.close();
+			}
+		}
+		try {
+			out = new BufferedWriter(new FileWriter(new File(resultFile)));
+			Rating rate = null;
+			Rating sr = null;
+			for(int i = 0; i < ratings.size(); i++) {
+				sr = ratings.get(i);
+				rate = sr.reRate((float) (sr.getRating()));
+				out.write(rate.toString() + "\n");
+			}
+		} finally {
+			if (out != null)
+				out.close();
+		}
 	}
 
 	private Rating findRating(Rating r) {
