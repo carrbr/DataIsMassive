@@ -1,0 +1,5 @@
+# everything but java is bundled in our jar file
+java=1.8
+apache commons math=3.4.1
+mtj=1.0.1
+TarsosLSH=custom build, original source https://github.com/JorenSix/TarsosLSH, my modified source https://github.com/carrbr/TarsosLSH
