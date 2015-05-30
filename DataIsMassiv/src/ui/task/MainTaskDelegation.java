@@ -21,6 +21,8 @@ public class MainTaskDelegation extends TaskCommand {
 			new CreateRandomModelTask(reduced).exec();
 		} else if (match(args, "test")) {
 			new TestModelTask(reduced).exec();
+		} else if (match(args, "testBI")) {
+			new TestBIModelTask(reduced).exec();
 		} else if (match(args, "rmse")) {
 			new RMSETask(reduced).exec();
 		} else if (match(args, "publish")) {

@@ -10,30 +10,33 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
+import domain.DataMonitor;
 import domain.Rating;
-import domain.model.AbstractRatingModel;
+import domain.model.BiasInteractionModel;
 
-public class TestModelTask extends TaskCommand {
+public class TestBIModelTask extends TaskCommand {
 
 	private String modelFile;
 	private String testFile;
 	private String resultFile;
+	private String monitorFile;
 
-
-	public TestModelTask(String modelFile, String testFile, String resultFile) {
+	public TestBIModelTask(String modelFile, String testFile,
+			String resultFile, String monitor) {
 		this.modelFile = modelFile;
 		this.testFile = testFile;
 		this.resultFile = resultFile;
 
 	}
 
-	public TestModelTask(String[] args) {
+	public TestBIModelTask(String[] args) {
 		super(args);
 
-		if (!needsHelp && args.length == 3) {
+		if (!needsHelp && args.length == 4) {
 			this.modelFile = args[0];
 			this.testFile = args[1];
 			this.resultFile = args[2];
+			this.monitorFile = args[3];
 		}
 	}
 
@@ -42,7 +45,7 @@ public class TestModelTask extends TaskCommand {
 		if (writeHelpIfNeeded())
 			return;
 
-		AbstractRatingModel model = readInModel();
+		BiasInteractionModel model = readInModel();
 
 		TextToRatingReader in = null;
 		BufferedWriter out = null;
@@ -61,20 +64,35 @@ public class TestModelTask extends TaskCommand {
 		}
 	}
 
-	private void testEachLine(AbstractRatingModel model, TextToRatingReader in,
-			BufferedWriter out) throws IOException {
+	private void testEachLine(BiasInteractionModel model,
+			TextToRatingReader in, BufferedWriter out) throws IOException {
 		Rating rateTest = null;
+		DataMonitor monitor = new DataMonitor();
+		model.setMonitor(monitor);
 
 		while ((rateTest = in.readNext()) != null) {
 			out.write(model.predict(rateTest) + "\n");
 		}
+		writeOutMonitorReport(monitor);
 	}
 
-	private AbstractRatingModel readInModel() throws IOException,
+	private void writeOutMonitorReport(DataMonitor monitor) {
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(new File(
+				monitorFile)))){
+			
+			monitor.printReportTo(bw);
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private BiasInteractionModel readInModel() throws IOException,
 			ClassNotFoundException, FileNotFoundException {
 		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(
 				new File(modelFile)))) {
-			return (AbstractRatingModel) ois.readObject();
+			return (BiasInteractionModel) ois.readObject();
 		}
 	}
 

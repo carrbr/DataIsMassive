@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import domain.DataMonitor;
 import domain.Rating;
 
 public class BiasInteractionModel extends AbstractRatingModel implements
@@ -15,6 +16,7 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 	private final MovieInTime movie;
 	private final UserInTime user;
 	private final Interaction interaction;
+	private transient DataMonitor monitor = null;
 
 	public BiasInteractionModel() {
 		base = new BaseLearner();
@@ -44,21 +46,34 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 			Random rand = new Random();
 			while (rlist.size() < toTrain.size())
 				rlist.add(toTrain.get(rand.nextInt(toTrain.size())));
-			interaction.train(rlist, base, movie, user, 0.002);
+			interaction.train(rlist, base, movie, user, 0.00001);
 
 		}
 
 	}
 
+	private double bound(double d) {
+		return Math.max(1, Math.min(5, d));
+	}
+
 	@Override
 	public double getDelta(Rating rating) {
-		double d = base.getDelta(rating) + movie.getDelta(rating)
-				+ user.getDelta(rating) + interaction.getDelta(rating);
+		double interactionPrediction = interaction.getDelta(rating);
+		double baseP = base.getDelta(rating);
+		double movieP = movie.getDelta(rating);
+		double userP = user.getDelta(rating);
+		double d = baseP + movieP + userP +  interactionPrediction;
+
+		if (monitor != null && rating.getRating() >= 1) {
+			monitor.reportInteraction(rating.getDateId(),
+					interactionPrediction, rating.getRating()-baseP -movieP- userP);
+		}
+
 		return bound(d);
 	}
 
-	private double bound(double d) {
-		return Math.max(1, Math.min(5, d));
+	public void setMonitor(DataMonitor monitor) {
+		this.monitor = monitor;
 	}
 
 }

@@ -20,7 +20,7 @@ public class Main {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		
+
 		handleInput(args);
 
 		// split data/training.txt data/A 10
@@ -30,13 +30,13 @@ public class Main {
 		// test model/random data/test.txt data/result.txt
 		// publish data/result.txt data/
 
-
 		// createBI model/B0
 		// trainBI model/B0 model/B1 data/training.txt 0
 		// trainBI model/B2 model/B2 data/A_train 1
 		// test model/B2 data/A_test data/A_test_result
 		// rmse data/A_test data/A_test_result
-	
+
+		// testBI model/PM4 data/A_test data/A_test_result data/A_report
 	}
 
 	private static void handleInput(String[] args) throws Exception {
