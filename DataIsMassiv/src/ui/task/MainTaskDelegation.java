@@ -27,10 +27,6 @@ public class MainTaskDelegation extends TaskCommand {
 			new RMSETask(reduced).exec();
 		} else if (match(args, "publish")) {
 			new PublishResultTask(reduced).exec();
-		} else if (match(args, "createNN")) {
-			new CreateNeuralModelTask(reduced).exec();
-		} else if (match(args, "trainNN")) {
-			new TrainNNTask(reduced).exec();
 		} else if (match(args, "createUCF")) {
 			new CreateUserCollaborativeFilteringTask(reduced).exec();
 		} else if (match(args, "createMCF")) {
