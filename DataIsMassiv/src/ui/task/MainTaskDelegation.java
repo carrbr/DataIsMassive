@@ -21,6 +21,8 @@ public class MainTaskDelegation extends TaskCommand {
 			new CreateRandomModelTask(reduced).exec();
 		} else if (match(args, "test")) {
 			new TestModelTask(reduced).exec();
+		} else if (match(args, "testBI")) {
+			new TestBIModelTask(reduced).exec();
 		} else if (match(args, "rmse")) {
 			new RMSETask(reduced).exec();
 		} else if (match(args, "publish")) {
@@ -35,6 +37,10 @@ public class MainTaskDelegation extends TaskCommand {
 			new CreateMovieCollaborativeFilteringTask(reduced).exec();
 		} else if (match(args, "combine")) {
 			new CombineModelTask(reduced).exec();
+		} else if (match(args, "createBI")) {
+			new CreateBiasInteractionTask(reduced).exec();
+		} else if (match(args, "trainBI")) {
+			new TrainBiasInteractionTask(reduced).exec();
 		} else {
 			System.out.println("No matching command found");
 			writeHelp();

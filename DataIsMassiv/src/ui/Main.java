@@ -30,13 +30,13 @@ public class Main {
 		// test model/random data/test.txt data/result.txt
 		// publish data/result.txt data/
 
-		// createNN model/NN
-		// test model/NN data/A_test data/A_test_result
-		// rmse data/A_test data/A_test_result
-		// trainNN model/NN model/NN2 data/A_test 500000
-		// test model/NN2 data/A_test data/A_test_result
-		// rmse data/A_test data/A_test_result
-		// trainNN model/NN3_1 model/NN3_2 data/training.txt 21000000
+		// createBI model/B0
+		// trainBI model/B0 model/B1 data/training.txt 0
+		// trainBI model/B2 model/B2 data/A_train 1
+		// test model/B2 data/A_test data/A_test_result
+		// rmse data/A_test data/A_test_result		
+		
+		// testBI model/PM4 data/A_test data/A_test_result data/A_report
 
 		// split data/training.txt data/UCF 11
 		// createUCF model/UCF107_101.model data/UCF107_101_train 100
