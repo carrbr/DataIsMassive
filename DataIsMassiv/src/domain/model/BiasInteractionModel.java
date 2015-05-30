@@ -20,7 +20,7 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 		base = new BaseLearner();
 		movie = new MovieInTime();
 		user = new UserInTime();
-		interaction = new Interaction();
+		interaction = new Interaction(818, 5000);
 	}
 
 	@Override
@@ -44,7 +44,7 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 			Random rand = new Random();
 			while (rlist.size() < toTrain.size())
 				rlist.add(toTrain.get(rand.nextInt(toTrain.size())));
-			interaction.train(rlist, base, movie, user, 0.001);
+			interaction.train(rlist, base, movie, user, 0.002);
 
 		}
 

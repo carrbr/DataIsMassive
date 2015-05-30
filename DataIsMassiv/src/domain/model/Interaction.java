@@ -1,6 +1,7 @@
 package domain.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
@@ -12,12 +13,19 @@ import domain.Rating;
 
 public class Interaction implements DelatAccess, Serializable {
 	private static final long serialVersionUID = 1L;
-	private static double etaMovie = .03;
-	private static double etaUser = .08;
-	private static double lambda = .00001;
+	private static double etaMovie = .05;
+	private static double etaUser = .1;
+	private static double lambda = .00005;
 	private int featureSize = 50;
 	private HashMap<Integer, RealVector> movies = new HashMap<>();
-	private HashMap<Integer, RealVector> users = new HashMap<>();
+	private ArrayList<HashMap<Integer, RealVector>> usersTimeBased = new ArrayList<>();
+	private final int daysPerBucket;
+
+	public Interaction(int daysPerBucket, int estimateMaxOfDays) {
+		this.daysPerBucket = daysPerBucket;
+		for (int i = 0; i < estimateMaxOfDays / daysPerBucket; i++)
+			usersTimeBased.add(new HashMap<>());
+	}
 
 	public void train(List<Rating> toTrain, BaseLearner base,
 			MovieInTime movieTime, UserInTime userTime, double randomNess) {
@@ -52,11 +60,12 @@ public class Interaction implements DelatAccess, Serializable {
 					* etaUser));
 			RealVector userRandomd = userVector.map((double x) -> x
 					+ randomNess * (rand.nextDouble() - .5));
-			users.put(rating.getUserId(), userRandomd.add(deltaUser));
+			RealVector newUserVector = userRandomd.add(deltaUser);
+			setUserVector(rating, newUserVector);
 		}
 		RealVector testMovieVector = movies.get(toTrain.get(0).getMovieId());
 		System.out.println(testMovieVector);
-		RealVector testUserVector = users.get(toTrain.get(0).getUserId());
+		RealVector testUserVector = getUserVector(toTrain.get(0));
 		System.out.println(testUserVector);
 		System.out.println("interaction: "
 				+ toScale(sigmoid(testUserVector.dotProduct(testMovieVector))));
@@ -96,12 +105,24 @@ public class Interaction implements DelatAccess, Serializable {
 	}
 
 	private RealVector getUserVector(Rating rating) {
-		RealVector realVector = users.get(rating.getUserId());
+		int bucketNo = rating.getDateId() / daysPerBucket;
+		bucketNo = usersTimeBased.size() >= bucketNo ? usersTimeBased.size() - 1
+				: bucketNo;
+
+		HashMap<Integer, RealVector> hashMapOfPointInTime = usersTimeBased
+				.get(bucketNo);
+		RealVector realVector = hashMapOfPointInTime.get(rating.getUserId());
 		if (realVector == null) {
 			realVector = MatrixUtils.createRealVector(new double[featureSize]);
-			users.put(rating.getUserId(), realVector);
+			hashMapOfPointInTime.put(rating.getUserId(), realVector);
 		}
 		return realVector;
 	}
 
+	private void setUserVector(Rating rating, RealVector newUserVector) {
+		int bucketNo = rating.getDateId() / daysPerBucket;
+		bucketNo = usersTimeBased.size() >= bucketNo ? usersTimeBased.size() - 1
+				: bucketNo;
+		usersTimeBased.get(bucketNo).put(rating.getUserId(), newUserVector);
+	}
 }
