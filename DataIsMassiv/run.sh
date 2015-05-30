@@ -13,7 +13,18 @@ function build_models() {
 #    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createUCF model/BUCF.model data/$1 100 back
     echo "building Backwards Movie Collaborative Filtering Model..."
 #    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createMCF model/BMCF.model data/$1 100 back
-    echo
+    echo 
+    echo "creating Latent Factor Model, 75 features"
+#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createBI model/LFFT.model 75
+	echo "calculate biases"
+#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 0
+	echo "train model with heat 1"
+#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 1
+	echo "train model with heat .5"
+#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.5
+	echo "train model with heat 0"
+#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0
+	echo
 }
 
 function generate_ratings() {
@@ -29,6 +40,9 @@ function generate_ratings() {
     echo "generating ratings for Backwards Movie Collaborative Filtering model"
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/BMCF.model data/$1 data/BMCF107_101_test_result
     echo
+    echo "generating ratings for Latent Factor model"
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/LFFT.model data/$1 data/result.txt
+    echo
 }
 
 function calculate_rmses() {
@@ -43,6 +57,9 @@ function calculate_rmses() {
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/BUCF107_101_test_result
     echo "RMSE for Backwards Movie Collaborative Filtering model:"
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/BMCF107_101_test_result
+    echo
+    echo "RMSE for Latent Factor model:"
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/result.txt
     echo
 }
 
