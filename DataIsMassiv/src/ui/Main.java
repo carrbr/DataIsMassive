@@ -40,8 +40,7 @@ public class Main {
 
 		// split data/training.txt data/UCF 11
 		// createUCF model/UCF107_101.model data/UCF107_101_train 100
-		// test model/UCF107_101.model data/UCF107_101_test
-		// data/UCF107_101_test_result
+		// test model/UCF107_101.model data/UCF107_101_test data/UCF107_101_test_result
 		// rmse data/UCF107_101_test data/UCF107_101_test_result
 
 		// split data/training.txt data/M 11
@@ -50,13 +49,11 @@ public class Main {
 		// rmse data/UCF107_101_test data/MCF107_101_test_result
 
 		// createUCF model/BUCF.model data/UCF107_101_train 100 back
-		// test model/BUCF.model data/UCF107_101_test
-		// data/BUCF107_101_test_result
+		// test model/BUCF.model data/UCF107_101_test data/BUCF107_101_test_result
 		// rmse data/UCF107_101_test data/BUCF107_101_test_result
 
 		// createMCF model/BMCF.model data/UCF107_101_train 100 back
-		// test model/BMCF.model data/UCF107_101_test
-		// data/BMCF107_101_test_result
+		// test model/BMCF.model data/UCF107_101_test data/BMCF107_101_test_result
 		// rmse data/UCF107_101_test data/BMCF107_101_test_result
 
 		// combine data/combine_result data/UCF.log data/MCF.log data/BMCF.log
