@@ -23,7 +23,7 @@ public class Interaction implements DelatAccess, Serializable {
 	public static class LearningSpecs {
 		public double etaMovie = .01;
 		public double etaUser = .05;
-		public double lambda = .0005;
+		public double lambda = .01;
 		public double randomNess = 0;
 	}
 
@@ -54,8 +54,10 @@ public class Interaction implements DelatAccess, Serializable {
 					for (int i = threadNum; i < toTrain.size(); i += numberOfThreads) {
 						myTrain.add(toTrain.get(i));
 					}
-					trainParallel(myTrain, base, movieTime, userTime,
-							new Random(), specs);
+					for (int j = 0; j < myTrain.size(); j++) {
+						trainParallel(myTrain.get(j), base, movieTime,
+								userTime, new Random(), specs);
+					}
 				}
 			}));
 		}
@@ -81,61 +83,48 @@ public class Interaction implements DelatAccess, Serializable {
 
 	}
 
-	private void trainParallel(List<Rating> toTrain, BaseLearner base,
+	private void trainParallel(Rating rating, BaseLearner base,
 			MovieInTime movieTime, UserInTime userTime, Random rand,
 			LearningSpecs specs) {
 
-		for (Rating rating : toTrain) {
-			double teacher = rating.getRating() - base.getDelta(rating)
-					- movieTime.getDelta(rating) - userTime.getDelta(rating);
-			teacher = toSigmoid(teacher);
+		double teacher = rating.getRating() - base.getDelta(rating)
+				- movieTime.getDelta(rating) - userTime.getDelta(rating);
+		teacher = toSigmoid(teacher);
 
-			double student = toSigmoid(getDelta(rating));
+		double student = toSigmoid(getDelta(rating));
 
-			double error = teacher - student;
+		double error = teacher - student;
 
-			double gradientDelta = sigmoDiff(student) * error;
-			RealVector movieVector = getMovieVector(rating);
-			RealVector userVector = getUserVector(rating);
-			
-			RealVector deltaMovie = userVector.mapMultiply(gradientDelta
-					* specs.etaMovie);
+		double gradientDelta = sigmoDiff(student) * error;
+		RealVector movieVector = getMovieVector(rating);
+		RealVector userVector = getUserVector(rating);
 
-			deltaMovie = deltaMovie.subtract(movieVector
-					.mapMultiply(specs.lambda * specs.etaMovie));
+		RealVector deltaMovie = userVector.mapMultiply(gradientDelta
+				* specs.etaMovie);
 
-			RealVector movieRandomd = movieVector.map((double x) -> x
-					+ specs.randomNess * (rand.nextDouble() - .5));
+		deltaMovie = deltaMovie.subtract(movieVector.mapMultiply(specs.lambda
+				* specs.etaMovie));
 
-			RealVector newMovieVector = movieRandomd.add(deltaMovie);
+		RealVector movieRandomd = movieVector.map((double x) -> x
+				+ specs.randomNess * (rand.nextDouble() - .5));
 
-			if (newMovieVector.isNaN()) {
-				System.out.println("nMV problem");
-				System.out.println(rating.getRating());
-				System.out.println(base.getDelta(rating));
-				System.out.println(movieTime.getDelta(rating));
-				System.out.println(userTime.getDelta(rating));
-				System.out.println(teacher);
-				System.out
-						.println("movie " + movieVector.isNaN() + movieVector);
-				System.out.println("user " + userVector.isNaN() + userVector);
-				throw new RuntimeException("gradient!");
-			}
-			setMovieVector(rating, newMovieVector);
+		RealVector newMovieVector = movieRandomd.add(deltaMovie);
 
-			RealVector deltaUser = movieVector.mapMultiply(gradientDelta
-					* specs.etaUser);
+		setMovieVector(rating, newMovieVector);
 
-			deltaUser = deltaUser.subtract(userVector.mapMultiply(specs.lambda
-					* specs.etaUser));
+		RealVector deltaUser = movieVector.mapMultiply(gradientDelta
+				* specs.etaUser);
 
-			RealVector userRandomd = userVector.map((double x) -> x
-					+ specs.randomNess * (rand.nextDouble() - .5));
+		deltaUser = deltaUser.subtract(userVector.mapMultiply(specs.lambda
+				* specs.etaUser));
 
-			RealVector newUserVector = userRandomd.add(deltaUser);
+		RealVector userRandomd = userVector.map((double x) -> x
+				+ specs.randomNess * (rand.nextDouble() - .5));
 
-			setUserVector(rating, newUserVector);
-		}
+		RealVector newUserVector = userRandomd.add(deltaUser);
+
+		setUserVector(rating, newUserVector);
+
 	}
 
 	private static double sigmoid(double x) {
