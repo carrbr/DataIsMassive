@@ -13,6 +13,6 @@ public class AVGPair implements Serializable {
 	}
 
 	public double getAVG() {
-		return totalScore / count;
+		return count == 0 ? 0 : totalScore / count;
 	}
 }

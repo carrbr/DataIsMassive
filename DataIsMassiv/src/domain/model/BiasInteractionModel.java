@@ -47,13 +47,12 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 	}
 
 	public void trainNN(List<Rating> toTrain, double heat) {
-		for (int i = 0; i < 10; i++) {
+
+		LearningSpecs specsOnHeat = genereateSpecsOnHeat(heat);
+
+		for (int i = 0; i < 3; i++) {
 			ArrayList<Rating> rlist = shuffleNewTraingSet(toTrain);
-
-			LearningSpecs specsOnHeat = genereateSpecsOnHeat(heat);
-
 			interaction.train(rlist, base, movie, user, specsOnHeat);
-
 		}
 
 	}
@@ -70,7 +69,7 @@ public class BiasInteractionModel extends AbstractRatingModel implements
 		LearningSpecs specs = new LearningSpecs();
 		specs.etaMovie = .01 + heat * .05;
 		specs.etaUser = .05 + heat * .1;
-		specs.lambda = .00001;
+		specs.lambda = .0001;
 		specs.randomNess = 0 + heat * 0.0001;
 		return specs;
 	}

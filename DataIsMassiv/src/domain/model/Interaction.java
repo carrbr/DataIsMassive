@@ -35,22 +35,23 @@ public class Interaction implements DelatAccess, Serializable {
 	}
 
 	public void train(List<Rating> toTrain, BaseLearner base,
-			MovieInTime movieTime, UserInTime userTime,
-			LearningSpecs specs) {
+			MovieInTime movieTime, UserInTime userTime, LearningSpecs specs) {
 
 		System.out.println("starting training on interaction");
 
 		ArrayList<Thread> threads = new ArrayList<>();
-		for (int i = 0; i < 4; i++) {
+		int numberOfThreads = 4;
+		for (int i = 0; i < numberOfThreads; i++) {
 
 			final int threadNum = i;
 			threads.add(new Thread(new Runnable() {
 
 				@Override
 				public void run() {
-					ArrayList<Rating> myTrain = new ArrayList<>(
-							toTrain.size() / 4 + 1);
-					for (int i = threadNum; i < toTrain.size(); i += 4) {
+
+					ArrayList<Rating> myTrain = new ArrayList<>(toTrain.size()
+							/ numberOfThreads + 1);
+					for (int i = threadNum; i < toTrain.size(); i += numberOfThreads) {
 						myTrain.add(toTrain.get(i));
 					}
 					trainParallel(myTrain, base, movieTime, userTime,
@@ -61,6 +62,7 @@ public class Interaction implements DelatAccess, Serializable {
 		for (Thread t : threads) {
 			t.start();
 		}
+		System.out.println(threads.size() + " Threads Started");
 		for (Thread t : threads) {
 			try {
 				t.join();
@@ -68,6 +70,7 @@ public class Interaction implements DelatAccess, Serializable {
 				e.printStackTrace();
 			}
 		}
+		System.out.println(threads.size() + " Threads Joined");
 
 		RealVector testMovieVector = movies.get(toTrain.get(0).getMovieId());
 		System.out.println(testMovieVector);
@@ -81,6 +84,7 @@ public class Interaction implements DelatAccess, Serializable {
 	private void trainParallel(List<Rating> toTrain, BaseLearner base,
 			MovieInTime movieTime, UserInTime userTime, Random rand,
 			LearningSpecs specs) {
+
 		for (Rating rating : toTrain) {
 			double teacher = rating.getRating() - base.getDelta(rating)
 					- movieTime.getDelta(rating) - userTime.getDelta(rating);
@@ -93,24 +97,43 @@ public class Interaction implements DelatAccess, Serializable {
 			double gradientDelta = sigmoDiff(student) * error;
 			RealVector movieVector = getMovieVector(rating);
 			RealVector userVector = getUserVector(rating);
-
+			
 			RealVector deltaMovie = userVector.mapMultiply(gradientDelta
 					* specs.etaMovie);
+
 			deltaMovie = deltaMovie.subtract(movieVector
 					.mapMultiply(specs.lambda * specs.etaMovie));
 
 			RealVector movieRandomd = movieVector.map((double x) -> x
 					+ specs.randomNess * (rand.nextDouble() - .5));
+
 			RealVector newMovieVector = movieRandomd.add(deltaMovie);
+
+			if (newMovieVector.isNaN()) {
+				System.out.println("nMV problem");
+				System.out.println(rating.getRating());
+				System.out.println(base.getDelta(rating));
+				System.out.println(movieTime.getDelta(rating));
+				System.out.println(userTime.getDelta(rating));
+				System.out.println(teacher);
+				System.out
+						.println("movie " + movieVector.isNaN() + movieVector);
+				System.out.println("user " + userVector.isNaN() + userVector);
+				throw new RuntimeException("gradient!");
+			}
 			setMovieVector(rating, newMovieVector);
 
 			RealVector deltaUser = movieVector.mapMultiply(gradientDelta
 					* specs.etaUser);
+
 			deltaUser = deltaUser.subtract(userVector.mapMultiply(specs.lambda
 					* specs.etaUser));
+
 			RealVector userRandomd = userVector.map((double x) -> x
 					+ specs.randomNess * (rand.nextDouble() - .5));
+
 			RealVector newUserVector = userRandomd.add(deltaUser);
+
 			setUserVector(rating, newUserVector);
 		}
 	}
@@ -124,7 +147,7 @@ public class Interaction implements DelatAccess, Serializable {
 	}
 
 	private static double toSigmoid(double scale) {
-		return (scale / 10) + .5;
+		return (scale / 10.0) + .5;
 	}
 
 	private static double sigmoDiff(double out) {
@@ -146,6 +169,11 @@ public class Interaction implements DelatAccess, Serializable {
 			setMovieVector(rating, realVector);
 		}
 		return realVector;
+	}
+
+	private synchronized void setMovieVector(Rating rating,
+			RealVector newMovieVector) {
+		movies.put(rating.getMovieId(), newMovieVector);
 	}
 
 	private synchronized RealVector getUserVector(Rating rating) {
@@ -171,8 +199,4 @@ public class Interaction implements DelatAccess, Serializable {
 		usersTimeBased.get(bucketNo).put(rating.getUserId(), newUserVector);
 	}
 
-	private synchronized void setMovieVector(Rating rating,
-			RealVector newMovieVector) {
-		movies.put(rating.getMovieId(), newMovieVector);
-	}
 }
