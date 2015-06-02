@@ -36,13 +36,13 @@ function generate_ratings() {
     echo "Generating Ratings: ratings will be stored in data/.  Expect this to take at least an hour."
     echo
     echo "generating ratings for User Collaborative Filtering model"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/UCF107_101.model data/$1 data/UCF107_101_test_result
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/UCF.model data/$1 data/UCF_test_result
     echo "generating ratings for Movie Collaborative Filtering model"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/MCF.model data/$1 data/MCF107_101_test_result
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/MCF.model data/$1 data/MCF_test_result
     echo "generating ratings for Backwards User Collaborative Filtering model"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/BUCF.model data/$1 data/BUCF107_101_test_result
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/BUCF.model data/$1 data/BUCF_test_result
     echo "generating ratings for Backwards Movie Collaborative Filtering model"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/BMCF.model data/$1 data/BMCF107_101_test_result
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/BMCF.model data/$1 data/BMCF_test_result
     echo
     echo "generating ratings for Latent Factor model"
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar \test model/LFFT.model data/$1 data/result.txt
@@ -54,13 +54,13 @@ function calculate_rmses() {
     echo "Calculating RMSEs.  This should be a relatively quick process."
     echo
     echo "RMSE for User Collaborative Filtering model:"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/UCF107_101_test_result
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/UCF_test_result
     echo "RMSE for Movie Collaborative Filtering model:"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/MCF107_101_test_result
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/MCF_test_result
     echo "RMSE for Backwards User Collaborative Filtering model:"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/BUCF107_101_test_result
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/BUCF_test_result
     echo "RMSE for Backwards Movie Collaborative Filtering model:"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/BMCF107_101_test_result
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/BMCF_test_result
     echo
     echo "RMSE for Latent Factor model:"
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/result.txt
