@@ -20,12 +20,10 @@ function build_models() {
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 0
 	echo "train model with heat 1"
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 1
-	echo "train model with heat .75"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.75
-	echo "train model with heat .5"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.5
-	echo "train model with heat .25"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.25
+	echo "train model with heat .66"
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.66
+	echo "train model with heat .33"
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.33
 	echo "train model with heat 0.01"
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.01
 	echo
