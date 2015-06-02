@@ -6,28 +6,28 @@ function build_models() {
     echo "Build Models: models will be generated and stored in models/.  Expect this to take several hours."
     echo
     echo "building User Collaborative Filtering Model..."
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createUCF model/UCF107_101.model data/$1 100
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createUCF model/UCF.model data/$1 100
     echo "building Movie Collaborative Filtering Model..."
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createMCF model/MCF.model data/$1 100
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createMCF model/MCF.model data/$1 100
     echo "building Backwards User Collaborative Filtering Model..."
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createUCF model/BUCF.model data/$1 100 back
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createUCF model/BUCF.model data/$1 100 back
     echo "building Backwards Movie Collaborative Filtering Model..."
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createMCF model/BMCF.model data/$1 100 back
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createMCF model/BMCF.model data/$1 100 back
     echo 
     echo "creating Latent Factor Model, 75 features"
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createBI model/LFFT.model 75
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar createBI model/LFFT.model 75
 	echo "calculate biases"
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 0
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 0
 	echo "train model with heat 1"
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 1
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 1
 	echo "train model with heat .75"
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.75
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.75
 	echo "train model with heat .5"
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.5
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.5
 	echo "train model with heat .25"
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.25
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.25
 	echo "train model with heat 0.01"
-#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.01
+    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar trainBI model/LFFT.model model/LFFT.model data/$1 1 0.01
 	echo
 }
 
@@ -72,8 +72,8 @@ function combine_results() {
     echo "generating aggregate result file: data/combine_result.txt"
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar combine sim data/cf_result.txt data/UCF.log data/MCF.log data/BMCF.log data/BUCF.log
     java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar combine nosim data/combine_result.txt data/cf_result.txt data/result.txt
-    echo "RMSE for combined result (ignore this value if running on test.txt):"
-    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/combine_result.txt
+#    echo "RMSE for combined result (ignore this value if running on test.txt):"
+#    java -Xms1024M -Xmx3072M -jar bin/data_is_massive.jar rmse data/$1 data/combine_result.txt
     echo
 }
 
