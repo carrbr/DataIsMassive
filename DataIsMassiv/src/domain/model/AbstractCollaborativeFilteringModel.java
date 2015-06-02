@@ -94,9 +94,8 @@ public abstract class AbstractCollaborativeFilteringModel extends
 					failCountNulls++;
 				System.out.println("num without similar elems = " + failCount
 						+ ", num null = " + failCountNulls);
-				result = r.reRate((float) 3.0); // we don't have this user in
-												// our data so the best we can
-												// do is guess in the middle
+				 // we don't have this user in our data so the best we can do is guess the baseline
+				result = r.reRate((float) computeFilterByElemBaselineRating(filterById, trainSet.getFeatureIdFromRating(r), r.getDateId(), trainSet));
 				out.write("0,"); // no similarity
 			} else {
 				result = r
@@ -138,20 +137,6 @@ public abstract class AbstractCollaborativeFilteringModel extends
 			BufferedWriter out) {
 		int count = 0;
 
-		// will use this to weight by similarity scores
-		double simTotal = 0;
-		for (SimilarElement simElem : similarSet) {
-			if (rs.getRatingValue(simElem.id, featureId) != 0
-					&& simElem.similarity >= minSim) { // only count if it's a
-														// rating value worth
-														// using
-				simTotal += simElem.similarity; // note right now similarities
-												// can only be positive because
-												// of minSim, o.w. need to take
-												// abs()
-			}
-		}
-
 		/*
 		 * using weighted (by similarity) average of useful ratings (greating
 		 * than minSim, and not unrated) from similar elems. Also we are norming
@@ -172,26 +157,22 @@ public abstract class AbstractCollaborativeFilteringModel extends
 		double result = r_base_e;
 		double r_base_e_prime = -1;
 		double sum = 0.0;
-		if (simTotal > 0) { // only rate if similar elements actually have
-							// something in common
-			for (SimilarElement simElem : similarSet) {
-				double r_e_primei = rs.getRatingValue(simElem.id, featureId);
+		// will use this to weight by similarity scores
+		double simTotal = 0;
+		int radius = 250; // radius around out date id we will permit to be counted
+		for (SimilarElement simElem : similarSet) {
+			double r_e_primei = rs.getRatingValue(simElem.id, featureId);
+			int ratingDateId = rs.getRatingDateId(simElem.id, featureId);
+			if (r_e_primei != 0 && simElem.similarity >= minSim && // only for elems who have rated this
+					(dateId - radius <= ratingDateId && dateId + radius >= ratingDateId)) { // only use elems that have close date ids
 				r_base_e_prime = computeFilterByElemBaselineRating(simElem.id,
 						featureId, dateId, rs);
-				if (r_e_primei != 0 && simElem.similarity >= minSim) { // only
-																		// for
-																		// elems
-																		// who
-																		// have
-																		// rated
-																		// this
-					sum += (r_e_primei - r_base_e_prime) * (simElem.similarity); // weight
-																					// based
-																					// on
-																					// similarity
-					count++;
-				}
+				sum += (r_e_primei - r_base_e_prime) * (simElem.similarity); // weight based on similarity 
+				simTotal += simElem.similarity; // note right now similarities can only be positive because of minSim, o.w. need to take abs()
+				count++;
 			}
+		}
+		if (simTotal > 0) {
 			sum /= simTotal;
 		}
 		result += sum;
@@ -463,8 +444,9 @@ public abstract class AbstractCollaborativeFilteringModel extends
 	 */
 	private double findSimilarity(int uId, int vId, AbstractRatingSet rs) {
 		double pc = pearsonCorrelation(uId, vId, rs);
-		double cs = cosineSimilarity(uId, vId, rs);
-		return getFlipedRatingIfNeccesary(cs * (1 - pcWeight) + pc * pcWeight);
+//		double cs = cosineSimilarity(uId, vId, rs);
+//		return getFlipedRatingIfNeccesary(cs * (1 - pcWeight) + pc * pcWeight);
+		return getFlipedRatingIfNeccesary(pc);
 	}
 
 	private double cosineSimilarity(int uId, int vId, AbstractRatingSet rs) {
@@ -486,6 +468,9 @@ public abstract class AbstractCollaborativeFilteringModel extends
 		double uAvg = rs.getMeanForFilterById(uId);
 		ArrayList<Rating> v = rs.getFilterByElemRatings(vId);
 		double vAvg = rs.getMeanForFilterById(vId);
+		
+		double uBase = -1;
+		double vBase = -1;
 
 		double numerator = 0.0;
 		double denominator = 0.0;
@@ -497,12 +482,11 @@ public abstract class AbstractCollaborativeFilteringModel extends
 		int vFeature = rs.getFeatureIdFromRating(vRate);
 		while (true) { // iterate until no more mutually rated items
 			if (uFeature == vFeature) { // both have rated same item
-				numerator += (vRate.getRating() - vAvg)
-						* (uRate.getRating() - uAvg);
-				uSumSquare += (uRate.getRating() - uAvg)
-						* (uRate.getRating() - uAvg);
-				vSumSquare += (vRate.getRating() - vAvg)
-						* (vRate.getRating() - vAvg);
+				vBase = this.computeFilterByElemBaselineRating(vId, vFeature, vRate.getDateId(), rs);
+				vBase = this.computeFilterByElemBaselineRating(uId, uFeature, uRate.getDateId(), rs);
+				numerator += (vRate.getRating() - vBase) * (uRate.getRating() - uBase);
+				uSumSquare += (uRate.getRating() - uBase) * (uRate.getRating() - uBase);
+				vSumSquare += (vRate.getRating() - vBase) * (vRate.getRating() - vBase);
 				if (j < v.size() && i < u.size()) {
 					vRate = v.get(j++);
 					vFeature = rs.getFeatureIdFromRating(vRate);
@@ -522,7 +506,7 @@ public abstract class AbstractCollaborativeFilteringModel extends
 			}
 
 		}
-		denominator = Math.sqrt(uSumSquare * vSumSquare);
+		denominator = Math.sqrt(uSumSquare) * Math.sqrt(vSumSquare);
 
 		double result = 0.0; // if we would have to divide by zero, just return
 								// zero anyways

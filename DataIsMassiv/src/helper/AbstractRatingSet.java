@@ -196,6 +196,21 @@ public abstract class AbstractRatingSet implements Serializable {
 		// filterById didn't rate this featureId
 		return 0; // TODO questionable decision, may have to change this later
 	}
+	
+	public int getRatingDateId(int filterById, int featureId) {
+		ArrayList<Rating> ratingList = ratings.get(filterById);
+		if (ratingList == null) { // this rating does not exist
+			return 0; // TODO this is questionable
+		}
+		// find the correct rating
+		for (Rating rating : ratingList) {
+			if (getFeatureIdFromRating(rating) == featureId) {
+				return rating.getDateId();
+			}
+		}
+		// filterById didn't rate this featureId
+		return 0; // TODO questionable decision, may have to change this later
+	}
 
 	public double getMeanForFilterById(int filterById) {
 		double avg = 0.0;
