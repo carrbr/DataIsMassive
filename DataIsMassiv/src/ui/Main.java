@@ -30,11 +30,16 @@ public class Main {
 		// test model/random data/test.txt data/result.txt
 		// publish data/result.txt data/
 
-		// createBI model/B0
-		// trainBI model/B0 model/B1 data/training.txt 0
-		// trainBI model/B2 model/B2 data/A_train 1
-		// test model/B2 data/A_test data/A_test_result
-		// rmse data/A_test data/A_test_result		
+		// createBI model/LFFT7.model 300
+		// trainBI model/LFFT7.model model/LFFT7.model data/training.txt 0
+		// trainBI model/LFFT7.model model/LFFT7.model data/training.txt 1 1
+		// trainBI model/LFFT7.model model/LFFT7.model data/training.txt 1 0.75
+		// trainBI model/LFFT7.model model/LFFT7.model data/training.txt 1 0.5
+		// trainBI model/LFFT7.model model/LFFT7.model data/training.txt 1 0.25
+		// trainBI model/LFFT7.model model/LFFT7.model data/training.txt 1 0.01
+		// trainBI model/LFFT2.model model/LFFT2.model data/A_train2 1 1
+		// test model/LFFT.model data/A_test data/A_test_result
+		// rmse data/A_test data/A_test_result
 		
 		// testBI model/PM4 data/A_test data/A_test_result data/A_report
 

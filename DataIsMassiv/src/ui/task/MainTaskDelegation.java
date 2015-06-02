@@ -17,6 +17,8 @@ public class MainTaskDelegation extends TaskCommand {
 		String[] reduced = removeFirst();
 		if (match(args, "split")) {
 			new SplitDataTask(reduced).exec();
+		} else if (match(args, "splitForTest")) {
+			new SplitDataToTestTask(reduced).exec();
 		} else if (match(args, "createRandom")) {
 			new CreateRandomModelTask(reduced).exec();
 		} else if (match(args, "test")) {
@@ -25,6 +27,10 @@ public class MainTaskDelegation extends TaskCommand {
 			new TestBIModelTask(reduced).exec();
 		} else if (match(args, "rmse")) {
 			new RMSETask(reduced).exec();
+		} else if (match(args, "histo")) {
+			new HistogramTask(reduced).exec();
+		} else if (match(args, "splitLast")) {
+			new SplitDataLastTask(reduced).exec();
 		} else if (match(args, "publish")) {
 			new PublishResultTask(reduced).exec();
 		} else if (match(args, "createUCF")) {
