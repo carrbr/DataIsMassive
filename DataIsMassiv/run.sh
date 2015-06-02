@@ -104,8 +104,8 @@ training_file="training.txt"
 test_file="test.txt"
 if [ $# -eq 0 ] 
 then
-    build_models
-    generate_ratings
+    build_models $training_file
+    generate_ratings $test_file
     combine_results
     publish
 else
